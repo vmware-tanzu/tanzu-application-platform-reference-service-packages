@@ -1,0 +1,28 @@
+---
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageInstall
+metadata:
+  name: rds-1
+  namespace: default
+spec:
+  serviceAccountName: rds-install
+  packageRef:
+    refName: rdspsql.services.tanzu-x.vmware.com
+    versionSelection:
+      constraints: 0.0.1-alpha
+  values:
+  - secretRef:
+      name: rds-1-values
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name:  rds-1-values
+  namespace: default
+stringData:
+  values.yml: |
+    name: "rds-1"
+    namespace: "default"
+    dbSubnetGroupName: <DB_SUBNET_GROUP_HERE> #! modify value
+    vpcSecurityGroupIDs:
+    - <SECURITY_GROUP_HERE> #! modify value

@@ -1,0 +1,10 @@
+#@data/values-schema
+---
+name: ""
+namespace: "default"
+database: "postgres"
+engine:
+  version: "14.1"
+vpcSecurityGroupIDs:
+ - ""
+dbSubnetGroupName: ""
