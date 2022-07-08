@@ -1,0 +1,14 @@
+---
+apiVersion: imgpkg.carvel.dev/v1alpha1
+images:
+- annotations:
+    kbld.carvel.dev/id: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/ack-rds-psql-instance-bundle@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+    kbld.carvel.dev/origins: |
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/ack-rds-psql-instance-bundle@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/ack-rds-psql-instance-bundle@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/ack-rds-psql-instance-bundle@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+  image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/ack-rds-psql-instance-bundle@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+kind: ImagesLock

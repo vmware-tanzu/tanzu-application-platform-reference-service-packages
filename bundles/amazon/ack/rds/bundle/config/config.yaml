@@ -1,0 +1,150 @@
+#@ load("@ytt:data", "data")
+
+#@ credentials_name = "{}-{}".format(data.values.name, "creds")
+#@ service_account_name = "{}-{}".format(data.values.name, "rds-reader")
+#@ role_name = service_account_name
+---
+apiVersion: rds.services.k8s.aws/v1alpha1
+kind: DBInstance
+metadata:
+  name: #@ data.values.name
+  namespace: #@ data.values.namespace
+  labels:
+    app.kubernetes.io/name: #@ data.values.name
+spec:
+  allocatedStorage: 20
+  dbInstanceClass: db.t3.micro
+  dbInstanceIdentifier: #@ data.values.name
+  dbName: #@ data.values.database
+  engine: postgres
+  engineVersion: #@ data.values.engine.version
+  masterUsername: adminUser
+  masterUserPassword:
+    namespace: #@ data.values.namespace
+    name: #@ credentials_name
+    key: password
+  vpcSecurityGroupIDs: #@ data.values.vpcSecurityGroupIDs
+  dbSubnetGroupName: #@ data.values.dbSubnetGroupName
+  autoMinorVersionUpgrade: true
+  backupRetentionPeriod: 1
+  copyTagsToSnapshot: false
+  deletionProtection: false
+  licenseModel: postgresql-license
+  monitoringInterval: 0
+  multiAZ: false
+  preferredBackupWindow: 23:00-23:30
+  preferredMaintenanceWindow: wed:23:34-thu:00:04
+  publiclyAccessible: false
+  storageEncrypted: false
+  storageType: gp2
+---
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ credentials_name
+  namespace: #@ data.values.namespace
+spec:
+  length: 64
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+---
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ "{}-{}".format(data.values.name, "bindable")
+  namespace: #@ data.values.namespace
+spec:
+  serviceAccountName: #@ service_account_name
+  inputResources:
+  - name: rds
+    ref:
+      apiVersion: rds.services.k8s.aws/v1alpha1
+      kind: DBInstance
+      name: #@ data.values.name
+  - name: creds
+    ref:
+      apiVersion: v1
+      kind: Secret
+      name: "$(.rds.spec.masterUserPassword.name)"
+  template:
+    metadata:
+      labels:
+        services.apps.tanzu.vmware.com/class: rds-postgres
+    type: postgresql
+    stringData:
+      type: postgresql
+      port: "$(.rds.status.endpoint.port)"
+      database: "$(.rds.spec.dbName)"
+      host: "$(.rds.status.endpoint.address)"
+      username: "$(.rds.spec.masterUsername)"
+    data:
+      password: "$(.creds.data.password)"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ credentials_name
+- apiGroups:
+  - rds.services.k8s.aws
+  resources:
+  - dbinstances
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ role_name
+subjects:
+- kind: ServiceAccount
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+minimumRequiredVersion: 0.34.0
+rebaseRules:
+- paths:
+  - [spec, autoMinorVersionUpgrade]
+  - [spec, backupRetentionPeriod]
+  - [spec, copyTagsToSnapshot]
+  - [spec, deletionProtection]
+  - [spec, licenseModel]
+  - [spec, monitoringInterval]
+  - [spec, multiAZ]
+  - [spec, preferredBackupWindow]
+  - [spec, preferredMaintenanceWindow]
+  - [spec, publiclyAccessible]
+  - [spec, storageEncrypted]
+  - [spec, storageType]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: rds.services.k8s.aws/v1alpha1, kind: DBInstance}

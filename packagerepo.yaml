@@ -1,0 +1,10 @@
+---
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageRepository
+metadata:
+  name: tap-service-reference-packages
+  namespace: kapp-controller-packaging-global
+spec:
+  fetch:
+    imgpkgBundle:
+      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.1

@@ -1,0 +1,33 @@
+# AWS Controllers for Kubernetes - RDS PSQL Instance
+
+Status: Experimental
+
+## Use
+
+For detailed instructions follow the guide [Services Toolkit Documentation on RDS using ACK](https://docs.vmware.com/en/draft/Services-Toolkit-for-VMware-Tanzu-Application-Platform/0.7/svc-tlk/GUID-usecases-consuming_aws_rds_with_ack.html)
+
+## Customize
+
+To customize the configuration of this Package Bundle modify the contens of `bundle` directory and follow the Build steps below.
+
+## Build
+
+>**Note This will be automated in the future**
+
+To alter this Package modify the contents and perfrom the following steps to build the Package Bundle image. This relies on:
+* [kbld](https://carvel.dev/kbld)
+* [imgpkg](https://carvel.dev/imgpkg)
+
+1. Build a new Package bundle image 
+```
+export REPO_HOST=<YOUR_IMAGE_REPO> #! e.g. harbor-repo.vmware.com/sgunaratne/experiment
+export BUNDLE_TAG=<YOUR_BUNDLE_TAG> #! e.g. latest
+
+pushd bundle
+    kbld -f config/ --imgpkg-lock-output=.imgpkg/images.yml
+    imgpkg push -b ${REPO_HOST}/rds-psql-instance-bundle:$BUNDLE_TAG -f .
+popd
+```
+
+1. Take the SHA produced by imgpkg and update the `package.yaml` file that is located in `repository/amazon/ack/rds/package.yaml` and modify `template.spec.fetch[0].imgpkgBundle.image` value.
+
