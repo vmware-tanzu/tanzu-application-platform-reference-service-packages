@@ -3,7 +3,7 @@ apiVersion: packaging.carvel.dev/v1alpha1
 kind: PackageRepository
 metadata:
   name: tap-service-reference-packages
-  namespace: tanzu-package-repo-global #! note this may be different in kapp was installed through cluster-essentials
+  namespace: tanzu-package-repo-global #! note this may be different in kapp was not installed through cluster-essentials
 spec:
   fetch:
     imgpkgBundle:
