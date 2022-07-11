@@ -1,7 +1,7 @@
 apiVersion: data.packaging.carvel.dev/v1alpha1
 kind: PackageMetadata
 metadata:
-  name: rdspsql.services.tanzu-x.vmware.com
+  name: psql.aws.references.services.apps.tanzu.vmware.com
 spec:
   categories:
   - services
