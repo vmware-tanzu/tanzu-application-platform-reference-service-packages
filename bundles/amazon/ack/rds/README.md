@@ -20,12 +20,12 @@ To alter this Package modify the contents and perfrom the following steps to bui
 
 1. Build a new Package bundle image 
 ```
-export REPO_HOST=<YOUR_IMAGE_REPO> #! e.g. harbor-repo.vmware.com/sgunaratne/experiment
+export REPO_HOST=<YOUR_IMAGE_REPO> #! e.g. ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages
 export BUNDLE_TAG=<YOUR_BUNDLE_TAG> #! e.g. latest
 
 pushd bundle
     kbld -f config/ --imgpkg-lock-output=.imgpkg/images.yml
-    imgpkg push -b ${REPO_HOST}/rds-psql-instance-bundle:$BUNDLE_TAG -f .
+    imgpkg push -b ${REPO_HOST}/psql.aws.references.services.apps.tanzu.vmware.com:$BUNDLE_TAG -f .
 popd
 ```
 
