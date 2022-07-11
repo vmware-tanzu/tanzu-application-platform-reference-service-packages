@@ -15,11 +15,14 @@ These reference packages are compatible with the following:
 
 ## Quick start
 
-Add the Package Repository to your Kubernetes cluster:
+Add the PackageRepository to your Kubernetes cluster:
+
 ```shell
 tanzu package repository add tap-service-reference-packages --url ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.1 -n kapp-controller-packaging-global
 ```
+
 or:
+
 ```shell
 kubectl apply -f packagerepo.yaml
 ```
