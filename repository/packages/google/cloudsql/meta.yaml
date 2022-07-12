@@ -1,0 +1,15 @@
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: PackageMetadata
+metadata:
+  name: psql.google.references.services.apps.tanzu.vmware.com
+spec:
+  categories:
+  - services
+  displayName: Google Cloud SQL instance
+  longDescription: |
+   Install Google Cloud SQL instance
+  maintainers:
+  - name: The Services Toolkit team
+  providerName: VMware
+  shortDescription: cloudsql
+  supportDescription: Not supported - provided as reference package only

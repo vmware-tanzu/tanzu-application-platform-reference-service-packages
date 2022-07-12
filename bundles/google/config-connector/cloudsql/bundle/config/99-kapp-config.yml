@@ -1,0 +1,24 @@
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+waitRules:
+- supportsObservedGeneration: true
+  conditionMatchers:
+  - status: "True"
+    type: Ready
+    success: true
+  resourceMatchers: &cloudSqlResources
+  - apiVersionKindMatcher: {apiVersion: sql.cnrm.cloud.google.com/v1beta1, kind: SQLInstance}
+  - apiVersionKindMatcher: {apiVersion: sql.cnrm.cloud.google.com/v1beta1, kind: SQLDatabase}
+  - apiVersionKindMatcher: {apiVersion: sql.cnrm.cloud.google.com/v1beta1, kind: SQLUser}
+rebaseRules:
+- paths:
+  - [metadata, annotations, cnrm.cloud.google.com/management-conflict-prevention-policy]
+  - [metadata, annotations, cnrm.cloud.google.com/project-id]
+  - [metadata, annotations, cnrm.cloud.google.com/state-into-spec]
+  - [metadata, annotations, cnrm.cloud.google.com/observed-secret-versions]
+  - [metadata, annotations, cnrm.cloud.google.com/mutable-but-unreadable-fields]
+  - [spec, resourceID]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *cloudSqlResources
