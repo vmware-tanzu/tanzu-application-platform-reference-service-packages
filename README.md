@@ -58,10 +58,10 @@ imgpkg push -b ${REPO_HOST}/tap-service-reference-package-repo:${TAG} -f reposit
 
 ## Contributing
 
-The tanzu-application-platform-reference-packages project team welcomes contributions from the community. Before you start working with tanzu-application-platform-reference-packages, please
-read our [Developer Certificate of Origin](https://cla.vmware.com/dco). All contributions to this repository must be
-signed as described on that page. Your signature certifies that you wrote the patch or have the right to pass it on
-as an open-source patch. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+The tanzu-application-platform-reference-packages project team welcomes contributions from the community. Before you start working with this project please
+read and sign our Contributor License Agreement (https://cla.vmware.com/cla/1/preview). If you wish to contribute code and you have not signed our
+Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For more detailed information, refer to 
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 See [LICENSE](./LICENSE)
