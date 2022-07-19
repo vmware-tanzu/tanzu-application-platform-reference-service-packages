@@ -1,0 +1,239 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:template", "template")
+
+
+#@ if data.values.name == "":
+#@   assert.fail('data value "name" must not be empty')
+#@ end
+#@ instanceName    = data.values.name
+#@ namespace       = data.values.namespace
+#@ labels          = data.values.labels
+#@ siLabels        = data.values.serviceInstanceLabels
+#@ version         = data.values.version
+#@ region          = data.values.region
+#@ tier            = data.values.tier
+#@ allowedNetworks = data.values.allowedNetworks
+
+#! for now we only create one db and one user
+#@ dbs             = [ instanceName ]
+#@ users           = [ instanceName ]
+
+#@ objReader = '{}-obj-reader'.format(instanceName)
+
+#@ collectedPasswords = []
+#@ generateCredName = lambda user: '{}-{}-creds'.format(instanceName, user)
+
+#@ def generatePassword(name, len=64):
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ name
+spec:
+  length: #@ len
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+#@ collectedPasswords.append(name)
+#@ end
+
+
+---
+#@ adminCredName = generateCredName("admin")
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLInstance
+metadata:
+  name: #@ instanceName
+spec:
+  databaseVersion: #@ version
+  region: #@ region
+  rootPassword:
+    valueFrom:
+      secretKeyRef:
+        key: password
+        name: #@ adminCredName
+  settings:
+    activationPolicy: ALWAYS
+    availabilityType: ZONAL
+    backupConfiguration:
+      backupRetentionSettings:
+        retainedBackups: 1
+        retentionUnit: COUNT
+      startTime: "16:00"
+      transactionLogRetentionDays: 1
+    diskAutoresize: true
+    diskAutoresizeLimit: 0
+    diskSize: 10
+    diskType: PD_SSD
+    ipConfiguration:
+      #@ if allowedNetworks:
+      authorizedNetworks: #@ allowedNetworks
+      #@ end
+      ipv4Enabled: true
+    locationPreference:
+      zone: #@ '{}-a'.format(region)
+    pricingPlan: PER_USE
+    tier: #@ tier
+--- #@ generatePassword(adminCredName)
+
+#@ for db in dbs:
+---
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLDatabase
+metadata:
+  name: #@ db
+spec:
+  charset: UTF8
+  collation: en_US.UTF8
+  instanceRef:
+    name: #@ instanceName
+#@ end
+
+#@ for user in users:
+---
+#@ userCredName = generateCredName("user")
+apiVersion: sql.cnrm.cloud.google.com/v1beta1
+kind: SQLUser
+metadata:
+  name: #@ user
+spec:
+  instanceRef:
+    name: #@ instanceName
+  password:
+    valueFrom:
+      secretKeyRef:
+        key: password
+        name: #@ userCredName
+--- #@ generatePassword(userCredName)
+#@ end
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ objReader
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: #@ objReader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ objReader
+subjects:
+- kind: ServiceAccount
+  name: #@ objReader
+
+---
+#! This can only happen after we've created all `Password`, otherwise
+#! collectedPasswords won't be fully popoulated yet
+
+#@ objReaderVerbs = ["get"]
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: #@ objReader
+rules:
+- apiGroups:     [ "" ]
+  resources:     [ "secrets" ]
+  verbs:         #@ objReaderVerbs
+  resourceNames: #@ collectedPasswords
+- apiGroups:     [ "sql.cnrm.cloud.google.com" ]
+  resources:     [ "sqlinstances" ]
+  verbs:         #@ objReaderVerbs
+  resourceNames: #@ [ instanceName ]
+#@ if/end len(dbs) >= 1:
+- apiGroups:     [ "sql.cnrm.cloud.google.com" ]
+  resources:     [ "sqldatabases" ]
+  verbs:         #@ objReaderVerbs
+  resourceNames: #@ dbs
+#@ if/end len(users) >= 1:
+- apiGroups:     [ "sql.cnrm.cloud.google.com" ]
+  resources:     [ "sqlusers" ]
+  verbs:         #@ objReaderVerbs
+  resourceNames: #@ users
+
+---
+#@ def generateSecretTemplate(instance, user, db):
+
+#! For now we deploy one instance with one database and one user. Thus we give
+#! the SecretTemplate and therefor also the claimable secret the same name as
+#! the instance itself.
+#! Once we split that up and have multiple databases and/or users, we need to
+#! come up with a naming strategy for the claimable secret.
+#@ secTmplName = instance
+
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ secTmplName
+spec:
+  inputResources:
+  - name: sqlInstance
+    ref:
+      apiVersion: sql.cnrm.cloud.google.com/v1beta1
+      kind: SQLInstance
+      name: #@ instance
+  - name: sqlDatabase
+    ref:
+      apiVersion: sql.cnrm.cloud.google.com/v1beta1
+      kind: SQLDatabase
+      name: #@ db
+  - name: sqlUser
+    ref:
+      apiVersion: sql.cnrm.cloud.google.com/v1beta1
+      kind: SQLUser
+      name: #@ user
+  - name: sqlUserSecret
+    ref:
+      apiVersion: v1
+      kind: Secret
+      name: $(.sqlUser.spec.password.valueFrom.secretKeyRef.name)
+  serviceAccountName: #@ objReader
+  template:
+    data:
+      password: $(.sqlUserSecret.data.password)
+    metadata:
+      labels:
+        #! services.apps.tanzu.vmware.com/CloudSQLInstance: $(.sqlInstance.metadata.name)
+        #! services.apps.tanzu.vmware.com/CloudSQLUser: $(.sqlUser.metadata.name)
+        #! services.apps.tanzu.vmware.com/CloudSQLDatabase: $(.sqlUser.metadata.name)
+        #! services.apps.tanzu.vmware.com/CloudSQLVersion: $(.sqlInstance.spec.databaseVersion)
+        app.kubernetes.io/instance: $(.sqlInstance.metadata.name)
+        _1: #@ template.replace(labels)
+        _2: #@ template.replace(siLabels)
+    stringData:
+      database: $(.sqlDatabase.metadata.name)
+      host: $(.sqlInstance.status.publicIpAddress)
+      port: "5432"
+      type: postgresql
+      username: $(.sqlUser.metadata.name)
+#@ end
+
+#@ for user in users:
+#@   for db in dbs:
+--- #@ generateSecretTemplate(instanceName, user, db)
+#@   end
+#@ end
+
+
+#@ objToLabelAndNamespace = overlay.not_op(
+#@   overlay.or_op(
+#@     overlay.subset({"apiVersion":"kapp.k14s.io/v1alpha1","kind":"Config"}),
+#@     overlay.subset({"kind": "ImagesLock"}),
+#@   )
+#@ )
+#@overlay/match expects="1+", by=objToLabelAndNamespace
+---
+metadata:
+  #@overlay/match missing_ok=True
+  labels: #@ labels
+
+  #@ if namespace not in [None, ""]:
+  #@overlay/match missing_ok=True
+  namespace: #@ namespace
+  #@ end

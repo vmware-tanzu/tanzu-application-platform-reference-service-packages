@@ -1,0 +1,47 @@
+#@data/values-schema
+---
+#@schema/title "Service Instance Name"
+#@schema/desc "The name of the Cloud SQL instance and related objects"
+name: ""
+
+#@schema/title "Service Instance Namespace"
+#@schema/desc "The namespace the service instance objects should be deployed into"
+#@schema/nullable
+namespace: ""
+
+#@schmea/title "Database Version"
+#@schema/desc "The database version of the Cloud SQL instance\nsee: https://cloud.google.com/config-connector/docs/reference/resource-docs/sql/sqlinstance#:~:text=Fields-,databaseVersion,-Optional"
+version: POSTGRES_14
+
+#@schema/title "Database Region"
+#@schema/desc "The region this Cloud SQL instance should be deployed into\nsee: https://cloud.google.com/config-connector/docs/reference/resource-docs/sql/sqlinstance#:~:text=with%2Dobjects/namespaces/-,region,-Optional"
+region: europe-west6
+
+#@schema/title "Database Machine Type"
+#@schema/desc "The machine type for the Cloud SQL instance\nsee: https://cloud.google.com/config-connector/docs/reference/resource-docs/sql/sqlinstance#:~:text=from%20your%20configuration.-,settings.tier,-Required"
+tier: db-g1-small
+
+#@schema/title "Labels"
+#@schema/desc "A set of labels which will be applied to all resources related to this instance"
+#@schema/default {"app.kubernetes.io/component":"cloudsql-postgres"}
+#@schema/examples ("Set custom labels on all objects", {"mycorp.io/service-type": "gcp-sql","mycorp.io/owner":"me@mycorp.io"})
+#@schema/type any=True
+labels:
+
+#@schema/title "Service Instance Labels"
+#@schema/desc "A set of labels which will be applied to the claimable secret"
+#@schema/default {"services.apps.tanzu.vmware.com/class":"cloudsql-postgres"}
+#@schema/type any=True
+serviceInstanceLabels:
+
+#@schema/title "Allowed Networks"
+#@schema/desc "A list of CIDR ranges allowed to talk to this Cloud SQL instance"
+#@schema/examples ("Allow one (named) network & one host", [{"name": "my-onprem-net","value":"11.22.33.44/24"},{"value":"8.8.8.8/32"}])
+#@schema/nullable
+allowedNetworks:
+-
+  #@schema/desc "the name for the authorized/allowed network (optional)"
+  #@schema/nullable
+  name: ""
+  #@schema/desc "the IPv4 CIDR of the authorized/allowed network"
+  value: ""

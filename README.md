@@ -33,10 +33,13 @@ Follow the instructions for a specific Service Instance below:
 
 ## Service Instances
 
-| Type      | Resource | Description |   Status     | 
-| ----------- | ----------- | ----------- | ----------- |
-| [Amazon RDS](./amazon/ack/rds/README.md) | DBInstance       |     Create RDS instances        | 🚧 Experimental      |
+| Type               | Resource(s)                        | Description                | Status           |
+| ------------------ | ---------------------------------- | -------------------------- | ---------------- |
+| [Amazon RDS]       | DBInstance                         | Create RDS instances       | 🚧 Experimental  |
+| [Google Cloud SQL] | SQLInstance, SQLDatabase, SQLUser  | Create Cloud SQL instances | 🚧 Experimental  |
 
+[Amazon RDS]: ./amazon/ack/rds/README.md
+[Google Cloud SQL]: ./google/config-connector/cloudsql/README.md
 
 ## Building the Package Repository
 
