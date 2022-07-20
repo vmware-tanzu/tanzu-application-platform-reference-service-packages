@@ -18,7 +18,9 @@ These reference packages are compatible with the following:
 Add the PackageRepository to your Kubernetes cluster:
 
 ```shell
-tanzu package repository add tap-service-reference-packages --url ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.1 -n tanzu-package-repo-global
+tanzu package repository add tap-service-reference-packages \
+    --url ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.2 \
+    -n tanzu-package-repo-global
 ```
 
 or:

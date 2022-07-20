@@ -7,4 +7,4 @@ metadata:
 spec:
   fetch:
     imgpkgBundle:
-      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.1
+      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.2
