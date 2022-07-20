@@ -1,6 +1,6 @@
-# Contributing to tanzu-application-platform-reference-packages
+# Contributing to tanzu-application-platform-reference-service-packages
 
-The tanzu-application-platform-reference-packages project team welcomes contributions from the community. Before you start working with this project please read and sign our Contributor License Agreement (https://cla.vmware.com/cla/1/preview). If you wish to contribute code and you have not signed our Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For any questions about the CLA process, please refer to our [FAQ](https://cla.vmware.com/faq).
+The tanzu-application-platform-reference-service-packages project team welcomes contributions from the community. Before you start working with this project please read and sign our Contributor License Agreement (https://cla.vmware.com/cla/1/preview). If you wish to contribute code and you have not signed our Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For any questions about the CLA process, please refer to our [FAQ](https://cla.vmware.com/faq).
 
 ## Contribution Flow
 
@@ -15,7 +15,7 @@ This is a rough outline of what a contributor's workflow looks like:
 Example:
 
 ``` shell
-git remote add upstream https://github.com/vmware-tanzu/tanzu-application-platform-reference-packages.git
+git remote add upstream https://github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages.git
 git checkout -b my-new-feature main
 git commit -a
 git push origin my-new-feature
