@@ -3,7 +3,6 @@ apiVersion: packaging.carvel.dev/v1alpha1
 kind: PackageInstall
 metadata:
   name: cloudsql-1
-  namespace: default
 spec:
   serviceAccountName: cloudsql-install
   packageRef:
@@ -18,7 +17,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: cloudsql-1-values
-  namespace: default
 stringData:
   values.yml: |
     name: "cloudsql-1"
