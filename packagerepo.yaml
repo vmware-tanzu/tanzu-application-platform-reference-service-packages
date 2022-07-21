@@ -2,9 +2,9 @@
 apiVersion: packaging.carvel.dev/v1alpha1
 kind: PackageRepository
 metadata:
-  name: tap-service-reference-packages
+  name: tap-reference-service-packages
   namespace: tanzu-package-repo-global #! note this may be different in kapp was not installed through cluster-essentials
 spec:
   fetch:
     imgpkgBundle:
-      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.2
+      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.2

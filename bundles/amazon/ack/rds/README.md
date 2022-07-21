@@ -22,7 +22,7 @@ To alter this Package, modify the contents and perform the following steps to bu
 1. Build a new Package bundle image:
 
 ```
-export REPO_HOST=<YOUR_IMAGE_REPO> #! e.g. ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages
+export REPO_HOST=<YOUR_IMAGE_REPO> #! e.g. ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages
 export BUNDLE_TAG=<YOUR_BUNDLE_TAG> #! e.g. latest
 
 pushd bundle

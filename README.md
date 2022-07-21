@@ -18,8 +18,8 @@ These reference packages are compatible with the following:
 Add the PackageRepository to your Kubernetes cluster:
 
 ```shell
-tanzu package repository add tap-service-reference-packages \
-    --url ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/tap-service-reference-package-repo:0.0.2 \
+tanzu package repository add tap-reference-service-packages \
+    --url ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.2 \
     -n tanzu-package-repo-global
 ```
 
@@ -50,11 +50,11 @@ Follow the instructions for a specific Service Instance below:
 To publish a new Package Repository follow these instructions:
 
 ```shell
-export REPO_HOST=ghcr.io/tanzu-application-platform-reference-packages
+export REPO_HOST=ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages
 export TAG=0.0.1-build.1
 
 kbld -f repository/ --imgpkg-lock-output repository/.imgpkg/images.yml
-imgpkg push -b ${REPO_HOST}/tap-service-reference-package-repo:${TAG} -f repository
+imgpkg push -b ${REPO_HOST}:${TAG} -f repository
 ```
 
 ## Adding a new Service Instance Package Bundle to the Repository
@@ -63,7 +63,7 @@ imgpkg push -b ${REPO_HOST}/tap-service-reference-package-repo:${TAG} -f reposit
 
 ## Contributing
 
-The tanzu-application-platform-reference-packages project team welcomes contributions from the community. Before you start working with this project please
+The tanzu-application-platform-reference-service-packages project team welcomes contributions from the community. Before you start working with this project please
 read and sign our Contributor License Agreement (https://cla.vmware.com/cla/1/preview). If you wish to contribute code and you have not signed our
 Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For more detailed information, refer to 
 [CONTRIBUTING.md](CONTRIBUTING.md).

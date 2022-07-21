@@ -88,7 +88,7 @@ spec:
     spec:
       fetch:
       - imgpkgBundle:
-          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-packages/psql.google.references.services.apps.tanzu.vmware.com@sha256:9fc1a2767adac504e06d6eb8c9b2cbecc887ad605e3652401f26dc101abd1c6d
+          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.google.references.services.apps.tanzu.vmware.com@sha256:9fc1a2767adac504e06d6eb8c9b2cbecc887ad605e3652401f26dc101abd1c6d
       template:
       - ytt:
           paths:
