@@ -1,0 +1,9 @@
+#@data/values-schema
+---
+name: ""
+namespace: "default"
+engine: "redis"
+cacheSubnetGroupName: ""
+cacheNodeType: "cache.t2.micro"
+vpcSecurityGroupIDs:
+ - ""

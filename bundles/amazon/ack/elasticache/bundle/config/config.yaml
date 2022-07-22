@@ -1,0 +1,226 @@
+#@ load("@ytt:data", "data")
+
+#@ user_reader_name = "{}-reader".format(data.values.name)
+#@ user_read_writer_name = "{}-read-writer".format(data.values.name)
+
+#@ user_reader_creds_name = "{}-creds".format(user_reader_name)
+#@ user_read_writer_creds_name = "{}-creds".format(user_read_writer_name)
+
+#@ user_reader_access_string = "on ~{}:: -@all +@read".format(data.values.name)
+#@ user_read_writer_access_string = "on ~{}:: +@all".format(data.values.name)
+
+#@ service_account_name = "{}-{}".format(data.values.name, "rds-reader")
+#@ role_name = service_account_name
+
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: ReplicationGroup
+metadata:
+  name: #@ data.values.name
+  namespace: #@ data.values.namespace
+spec:
+  description: #@ "A {} service instance".format(data.values.engine)
+  engine: #@ data.values.engine
+  replicationGroupID: #@ data.values.name
+  cacheNodeType: #@ data.values.cacheNodeType
+  cacheSubnetGroupName: #@ data.values.cacheSubnetGroupName
+  securityGroupIDs: #@ data.values.vpcSecurityGroupIDs
+  transitEncryptionEnabled: true
+  userGroupIDs:
+  - #@ data.values.name
+---
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ user_read_writer_creds_name
+  namespace: #@ data.values.namespace
+spec:
+  length: 128
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: User
+metadata:
+  name: #@ user_read_writer_name
+  namespace: #@ data.values.namespace
+spec:
+  accessString: #@ user_read_writer_access_string
+  engine: #@ data.values.engine
+  passwords:
+  - namespace: #@ data.values.namespace
+    name: #@ user_read_writer_creds_name
+    key: password
+  userID: #@ user_read_writer_name
+  userName: #@ user_read_writer_name
+---
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ user_reader_creds_name
+  namespace: #@ data.values.namespace
+spec:
+  length: 128
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: User
+metadata:
+  name: #@ user_reader_name
+  namespace: #@ data.values.namespace
+spec:
+  accessString: #@ user_reader_access_string
+  engine: #@ data.values.engine
+  passwords:
+  - namespace: #@ data.values.namespace
+    name: #@ user_reader_creds_name
+    key: password
+  userID: #@ user_reader_name
+  userName: #@ user_reader_name
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: UserGroup
+metadata:
+  name: #@ data.values.name
+  namespace: #@ data.values.namespace
+spec:
+  engine: #@ data.values.engine
+  userGroupID: #@ data.values.name
+  userIDs:
+  - default #! Cannot create User Group without default user ...
+  - #@ user_reader_name
+  - #@ user_read_writer_name
+---
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ "{}-bindable".format(user_read_writer_name)
+  namespace: #@ data.values.namespace
+spec:
+  serviceAccountName: #@ service_account_name
+  inputResources:
+  - name: replicationGroup
+    ref:
+      apiVersion: elasticache.services.k8s.aws/v1alpha1
+      kind: ReplicationGroup
+      name: #@ data.values.name
+  - name: creds
+    ref:
+      apiVersion: v1
+      kind: Secret
+      name: #@ user_read_writer_creds_name
+  template:
+    metadata:
+      labels:
+        services.apps.tanzu.vmware.com/class: redis-small
+    type: redis
+    stringData:
+      type: redis
+      username: #@ user_read_writer_name
+      host: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.address)
+      port: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.port)
+    data:
+      password: "$(.creds.data.password)"
+---
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ "{}-bindable".format(user_reader_name)
+  namespace: #@ data.values.namespace
+spec:
+  serviceAccountName: #@ service_account_name
+  inputResources:
+  - name: replicationGroup
+    ref:
+      apiVersion: elasticache.services.k8s.aws/v1alpha1
+      kind: ReplicationGroup
+      name: #@ data.values.name
+  - name: creds
+    ref:
+      apiVersion: v1
+      kind: Secret
+      name: #@ user_reader_creds_name
+  template:
+    metadata:
+      labels:
+        services.apps.tanzu.vmware.com/class: redis-small
+    type: redis
+    stringData:
+      type: redis
+      username: #@ user_reader_name
+      host: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.address)
+      port: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.port)
+    data:
+      password: "$(.creds.data.password)"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ user_read_writer_creds_name
+  - #@ user_reader_creds_name
+- apiGroups:
+  - elasticache.services.k8s.aws
+  resources:
+  - replicationgroups
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ role_name
+subjects:
+- kind: ServiceAccount
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+minimumRequiredVersion: 0.34.0
+rebaseRules:
+- paths:
+  - [spec, atRestEncryptionEnabled]
+  - [spec, cacheNodeType]
+  - [spec, cacheSubnetGroupName]
+  - [spec, description]
+  - [spec, engine]
+  - [spec, replicationGroupID]
+  - [spec, securityGroupIDs]
+  - [spec, snapshotRetentionLimit]
+  - [spec, snapshotWindow]
+  - [spec, transitEncryptionEnabled]
+  - [spec, userGroupIDs]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: rds.services.k8s.aws/v1alpha1, kind: ReplicationGroup}
