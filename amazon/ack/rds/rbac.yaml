@@ -3,13 +3,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rds-install
-  namespace: default
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: rds-install
-  namespace: default
 rules:
 - apiGroups: ["*"] # TODO: use more fine-grained RBAC permissions
   resources: ["*"]
@@ -19,7 +17,6 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: rds-install
-  namespace: default
 subjects:
 - kind: ServiceAccount
   name: rds-install
