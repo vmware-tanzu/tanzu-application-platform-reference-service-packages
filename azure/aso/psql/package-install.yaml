@@ -1,0 +1,46 @@
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageInstall
+metadata:
+  name: psql-1
+  namespace: psql-1
+spec:
+  serviceAccountName: psql-install
+  packageRef:
+    refName: psql.azure.references.services.apps.tanzu.vmware.com
+    versionSelection:
+      constraints: 0.16.0
+  values:
+  - secretRef:
+      name: psql-1-values
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name:  psql-1-values
+  namespace: psql-1  
+stringData:
+  values.yml: |
+    create_namespace: false
+    use_existing_resource_group: false
+    resource_group: psql-1
+    resource_name: psql-1
+    resource_namespace: psql-1
+    location: westeurope
+    version: "13"
+    administrator_name: trpadmin
+
+    aso_controller_namespace: azureserviceoperator-system
+
+    instance_type: Standard_D4s_v3
+    instance_tier: GeneralPurpose
+    instance_storage_size_gb: 128
+
+    firewall_rules:
+    - startIp: 0.0.0.0
+      endIp: 0.0.0.0
+
+    databases:
+    - name: "psql-1"
+    - name: ""
+
+

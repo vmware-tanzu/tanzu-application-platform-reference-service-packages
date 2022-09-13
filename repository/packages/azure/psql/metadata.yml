@@ -1,0 +1,16 @@
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: PackageMetadata
+metadata:
+  creationTimestamp: null
+  name: psql.azure.references.services.apps.tanzu.vmware.com
+spec:
+  categories:
+  - services
+  displayName: Azure Flexible Server for Postgresql
+  longDescription: |
+    Helps you install an Azure Flexible Server for Postgresql which can be bound to your application via a ServiceBinding.
+  maintainers:
+  - name: The TAP Reference Packages Team
+  providerName: VMware
+  shortDescription: dbforpostgresql.azure.com
+  supportDescription: Not supported - provided as reference package only

@@ -1,0 +1,229 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:regexp", "regexp")
+#@ load("@ytt:ip", "ip")
+
+
+#@ flexibleServerName    = data.values.resource_name
+#@ dbSecretName          = data.values.resource_name
+#@ resourceGroupK8SName  = data.values.resource_name
+#@ serviceAccountName      = data.values.resource_name + "-reader"
+#@ serviceAccountNamespace = data.values.resource_namespace
+#@ roleName                = data.values.resource_name + "-reading"
+
+#@ mandatory_fields = [ "location", "resource_group", "databases", "firewall_rules" ]
+#@ missing_fields = []
+#@ for field in mandatory_fields:
+#@   if len(data.values[field]) == 0:
+#@     missing_fields.append(field)
+#@   end
+#@ end
+#@ if len(missing_fields) > 0:
+#@   assert.fail("Missing values for mandatory fields '{}'".format(missing_fields))
+#@ end
+
+#@ if not regexp.match("^Standard_", data.values.instance_type):
+#@   assert.fail("'instance_type' must follow the convention Standard_(VMname) (was: '{}')".format(data.values.instance_type))
+#@ end
+
+#@ if data.values.instance_tier not in ["Burstable", "GeneralPurpose", "Memory Optimized"]:
+#@   assert.fail("'instance_tier' must be in [\"Burstable\", \"GeneralPurpose\", \"Memory Optimized\"] (was: '{}')".format(data.values.instance_tier))
+#@ end
+
+#@ if data.values.instance_storage_size_gb < 32 or data.values.instance_storage_size_gb > 16384:
+#@   assert.fail("'instance_storage_size_gb' must be within 32 and 16384 (was: {})".format(data.values.instance_storage_size_gb))
+#@ end
+
+#@ if data.values.create_namespace:
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: #@ data.values.resource_namespace
+#@ end
+---
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ dbSecretName
+  namespace: #@ data.values.resource_namespace
+spec:
+  length: 64
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+---
+apiVersion: resources.azure.com/v1beta20200601
+kind: ResourceGroup
+metadata:
+  name: #@ resourceGroupK8SName
+  namespace: #@ data.values.resource_namespace
+  annotations:
+    serviceoperator.azure.com/operator-namespace: #@ data.values.aso_controller_namespace
+#@ if data.values.use_existing_resource_group:
+    serviceoperator.azure.com/reconcile-policy: skip
+#@ end
+  labels:
+    kapp.k14s.io/noop: ""
+spec:
+  azureName: #@ data.values.resource_group
+  location: #@ data.values.location
+
+#@ databaseCounter = 0
+#@ for db in data.values.databases:
+#@   dbName = db.name
+#@   if dbName == "":
+#@     dbName = flexibleServerName + "-" + str(databaseCounter)
+#@     databaseCounter += 1
+#@   end
+---
+apiVersion: dbforpostgresql.azure.com/v1beta20210601
+kind: FlexibleServersDatabase
+metadata:
+  name: #@ dbName
+  namespace: #@ data.values.resource_namespace
+spec:
+  azureName: #@ dbName
+  owner:
+    name: #@ flexibleServerName
+  charset: #@ db.charset
+  collation: #@ db.collation
+#@ end
+
+#@ fwRuleCounter = 0
+#@ for val in data.values.firewall_rules:
+#@   startAddr = ip.parse_addr(val.startIp)
+#@   endAddr = ip.parse_addr(val.endIp)
+--- 
+apiVersion: dbforpostgresql.azure.com/v1beta20210601
+kind: FlexibleServersFirewallRule
+metadata:
+  name: #@ data.values.resource_name + "-" + str(fwRuleCounter)
+  namespace: #@ data.values.resource_namespace
+spec:
+  owner:
+    name: #@ flexibleServerName
+  startIpAddress: #@ startAddr.string()
+  endIpAddress: #@ endAddr.string()
+#@   fwRuleCounter += 1
+#@ end  
+---
+apiVersion: dbforpostgresql.azure.com/v1beta20210601
+kind: FlexibleServer
+metadata:
+  name: #@ flexibleServerName
+  namespace: #@ data.values.resource_namespace
+spec:
+  location: #@ data.values.location
+  azureName: #@ flexibleServerName
+  owner:
+    name: #@ resourceGroupK8SName
+  version: #@ data.values.version
+  sku:
+    name: #@ data.values.instance_type
+    tier: #@ data.values.instance_tier
+  administratorLogin: #@ data.values.administrator_name
+  administratorLoginPassword:
+    name: #@ dbSecretName
+    key: password
+  storage:
+    storageSizeGB: #@ data.values.instance_storage_size_gb
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ serviceAccountName
+  namespace: #@ serviceAccountNamespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: #@ roleName
+  namespace: #@ data.values.resource_namespace
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ data.values.resource_name
+- apiGroups:
+  - dbforpostgresql.azure.com
+  resources:
+  - flexibleservers
+  - flexibleserversdatabases
+  - flexibleserversfirewallrule
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ data.values.resource_name
+- apiGroups:
+  - resources.azure.com
+  resources:
+  - resourcegroups
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ data.values.resource_name
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: #@ roleName
+  namespace: #@ data.values.resource_namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ roleName
+subjects:
+- kind: ServiceAccount
+  name: #@ serviceAccountName
+  namespace: #@ serviceAccountNamespace
+---
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ data.values.resource_name + "-bindable"
+  namespace: #@ data.values.resource_namespace
+spec:
+  serviceAccountName: #@ serviceAccountName
+  inputResources:
+  - name: server
+    ref:
+      apiVersion: dbforpostgresql.azure.com/v1alpha1api20210601
+      kind: FlexibleServer
+      name: #@ flexibleServerName
+  - name: db
+    ref:
+      apiVersion: dbforpostgresql.azure.com/v1alpha1api20210601
+      kind: FlexibleServersDatabase
+      name: #@ data.values.resource_name
+  - name: creds
+    ref:
+      apiVersion: v1
+      kind: Secret     
+      name: "$(.server.spec.administratorLoginPassword.name)"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: #@ data.values.resource_name
+        app.kubernetes.io/instance: "$(.server.metadata.name)"
+        services.apps.tanzu.vmware.com/class: azure-postgres
+    type: postgresql
+    stringData:
+      type: postgresql
+      port: "5432"
+      database: "$(.db.status.name)"
+      host: "$(.server.status.fullyQualifiedDomainName)"
+      username: "$(.server.status.administratorLogin)"
+    data:
+      password: "$(.creds.data.password)"

@@ -1,0 +1,43 @@
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+waitRules:
+- supportsObservedGeneration: false
+  ytt:
+    funcContractV1:
+      resource.star: |
+        def is_done(resource):
+            kind = resource.kind
+            name = resource.metadata.name
+
+            if not "status" in resource or not "conditions" in resource.status:
+              return {"done": False, "successful": False, "message": "Resource " + kind + "/" + name + " waiting for status"}
+            end
+
+            condition = resource.status.conditions[0]
+            reason = ""
+            if "reason" in condition:
+              reason = condition.reason
+            end
+
+            if repr(condition.type) == repr("Ready") and repr(reason) == repr("Succeeded"):
+              return {"done": True, "successful": True, "message": "Resource " + kind + "/" + name + " created"}
+            elif repr(condition.type) == repr("Ready") and repr(condition.status) == repr("False") and repr(condition.severity) == repr("Error"):
+              return {"done": True, "successful": False, "message": "Resource " + kind + "/" + name + " creation failed: " + reason}
+            else:
+              return {"done": False, "successful": False, "message": "Resource " + kind + "/" + name + " still being reconciled: " + reason}
+            end
+        end
+  resourceMatchers: &flexibleServerResources
+  - apiVersionKindMatcher: {apiVersion: resources.azure.com/v1beta20200601, kind: ResourceGroup} 
+  - apiVersionKindMatcher: {apiVersion: dbforpostgresql.azure.com/v1beta20210601, kind: FlexibleServer}
+  - apiVersionKindMatcher: {apiVersion: dbforpostgresql.azure.com/v1beta20210601, kind: FlexibleServersDatabase}
+  - apiVersionKindMatcher: {apiVersion: dbforpostgresql.azure.com/v1beta20210601, kind: FlexibleServersFirewallRule}
+rebaseRules:
+- paths:
+  - [metadata, annotations, serviceoperator.azure.com/operator-namespace]
+  - [metadata, annotations, serviceoperator.azure.com/resource-id]
+  - [metadata, annotations, serviceoperator.azure.com/poller-resume-id]  
+  - [metadata, annotations, serviceoperator.azure.com/poller-resume-token]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers: *flexibleServerResources

@@ -1,0 +1,72 @@
+#@data/values-schema
+---
+#@schema/title "ASO Controller Namespace"
+#@schema/desc "The Namespace where the Azure ASO controller is installed that should own this Azure RM resource"
+aso_controller_namespace: ""
+
+#@schema/title "Create namespace flag"
+#@schema/desc "Whether to create or not the namespace for the resources"
+#@schema/type any=False
+#@schema/default True
+create_namespace: True
+
+#@schema/title "ResourceGroup"
+#@schema/desc "Azure ResourceGroup for the servers/database resources"
+resource_group: ""
+
+#@schema/title "UseExistingResourceGroup"
+#@schema/desc "Whether to use an existing Azure resource group or not"
+#@schema/default False
+use_existing_resource_group: True
+
+#@schema/title "ResourceName"
+#@schema/desc "Name for the resources"
+#@schema/default "aso-psql"
+resource_name: ""
+
+#@schema/title "Location"
+#@schema/desc "Location where the resources will be created"
+location: ""
+
+#@schema/title "Version"
+#@schema/desc "PostgreSQL version to deploy (only 11, 12 and 13 are currently supported"
+#@schema/default "13"
+version: ""
+
+#@schema/title "AdministratorName"
+#@schema/desc "Username for the administrator user. It cannot be 'azure_superuser', 'azuresu', 'azure_pg_admin', 'sa', 'admin', 'administrator', 'root', 'guest', 'dbmanager', 'loginmanager', 'dbo', 'information_schema', 'sys', 'db_accessadmin', 'db_backupoperator', 'db_datareader', 'db_datawriter', 'db_ddladmin', 'db_denydatareader', 'db_denydatawriter', 'db_owner', 'db_securityadmin', 'public'."
+#@schema/default "myadmin"
+administrator_name: ""
+
+#@schema/title "ResourceNamespace"
+#@schema/desc "Kubernetes namespace where the Azure resources will be created"
+#@schema/default "azure-psql"
+resource_namespace: ""
+
+#@schema/title "InstanceType"
+#@schema/desc "The type of the requested instance (follows the convention Standard_{VM name})"
+#@schema/default "Standard_D2s_v3"
+instance_type: ""
+
+#@schema/title "InstanceTier"
+#@schema/desc "The tier of the requested instance (allowed: 'Burstable', 'GeneralPurpose' or 'Memory Optimized')"
+#@schema/default "GeneralPurpose"
+instance_tier: ""
+
+#@schema/title "InstanceStorageSizeGB"
+#@schema/desc "The storage size for the instance in GB (allowed: from 32 to 16384)"
+#@schema/default 128
+instance_storage_size_gb: 0
+
+#@schema/title "FirewallRules"
+#@schema/desc "List of the Firewall Rules for exposing the Flexible Server. If it should be available from anywhere, use '0.0.0.0' for both startIp and endIp. Must be IPv4 format."
+firewall_rules:
+- startIp: ""
+  endIp: ""
+
+#@schema/title "Databases"
+#@schema/desc "List of databases that have to created in the flexible server instance"
+databases:
+- name: ""
+  charset: "UTF8"
+  collation: "en_US.utf8"
