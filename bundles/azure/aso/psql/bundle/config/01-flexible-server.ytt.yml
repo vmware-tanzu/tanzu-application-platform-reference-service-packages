@@ -3,50 +3,69 @@
 #@ load("@ytt:regexp", "regexp")
 #@ load("@ytt:ip", "ip")
 
+#@ def tags(resource_tags=[]):
+#@  tags_list = []
+#@  tags_list.extend(data.values.global_tags)
+#@  tags_list.extend(resource_tags)
+#@  tags_map = { x["key"]: x["value"] for x in tags_list if x["key"] != "" and x["value"] != "" }
+#@  return(tags_map)
+#@ end
 
-#@ flexibleServerName    = data.values.resource_name
-#@ dbSecretName          = data.values.resource_name
-#@ resourceGroupK8SName  = data.values.resource_name
-#@ serviceAccountName      = data.values.resource_name + "-reader"
-#@ serviceAccountNamespace = data.values.resource_namespace
-#@ roleName                = data.values.resource_name + "-reading"
+#@ flexibleServerName    = data.values.name
+#@ dbSecretName          = data.values.name
+#@ resourceGroupK8SName  = data.values.name
+#@ serviceAccountName      = data.values.name + "-reader"
+#@ serviceAccountNamespace = data.values.namespace
+#@ roleName                = data.values.name + "-reading"
 
-#@ mandatory_fields = [ "location", "resource_group", "databases", "firewall_rules" ]
+#@ firewallRules = data.values.firewall_rules
+#@ if len(firewallRules) == 0:
+#@   firewallRules = [{"startIpAddress": "0.0.0.0", "endIpAddress": "0.0.0.0", "tags": []}]
+#@ end
+
+#@ mandatory_fields = [ "name", "location", "aso_controller_namespace" ]
 #@ missing_fields = []
 #@ for field in mandatory_fields:
 #@   if len(data.values[field]) == 0:
 #@     missing_fields.append(field)
 #@   end
 #@ end
+
+#@ databaseName = "name" in data.values.database and data.values.database.name or data.values.name
+
+#@ if data.values.resource_group.name == "":
+#@   missing_fields.append("resource_group.name")
+#@ end
 #@ if len(missing_fields) > 0:
 #@   assert.fail("Missing values for mandatory fields '{}'".format(missing_fields))
 #@ end
 
-#@ if not regexp.match("^Standard_", data.values.instance_type):
-#@   assert.fail("'instance_type' must follow the convention Standard_(VMname) (was: '{}')".format(data.values.instance_type))
+#@ if not regexp.match("^Standard_", data.values.server.instance_type):
+#@   assert.fail("'instance_type' must follow the convention Standard_(VMname) (was: '{}')".format(data.values.server.instance_type))
 #@ end
 
-#@ if data.values.instance_tier not in ["Burstable", "GeneralPurpose", "Memory Optimized"]:
-#@   assert.fail("'instance_tier' must be in [\"Burstable\", \"GeneralPurpose\", \"Memory Optimized\"] (was: '{}')".format(data.values.instance_tier))
+#@ if data.values.server.instance_tier not in ["Burstable", "GeneralPurpose", "Memory Optimized"]:
+#@   assert.fail("'instance_tier' must be in [\"Burstable\", \"GeneralPurpose\", \"Memory Optimized\"] (was: '{}')".format(data.values.server.instance_tier))
 #@ end
 
-#@ if data.values.instance_storage_size_gb < 32 or data.values.instance_storage_size_gb > 16384:
-#@   assert.fail("'instance_storage_size_gb' must be within 32 and 16384 (was: {})".format(data.values.instance_storage_size_gb))
+#@ if data.values.server.instance_storage_size_gb < 32 or data.values.server.instance_storage_size_gb > 16384:
+#@   assert.fail("'instance_storage_size_gb' must be within 32 and 16384 (was: {})".format(data.values.server.instance_storage_size_gb))
 #@ end
 
-#@ if data.values.create_namespace:
+#@ if data.values.create_namespace and data.values.namespace:
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: #@ data.values.resource_namespace
+  name: #@ data.values.namespace
 #@ end
 ---
 apiVersion: secretgen.k14s.io/v1alpha1
 kind: Password
 metadata:
   name: #@ dbSecretName
-  namespace: #@ data.values.resource_namespace
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 spec:
   length: 64
   secretTemplate:
@@ -58,54 +77,49 @@ apiVersion: resources.azure.com/v1beta20200601
 kind: ResourceGroup
 metadata:
   name: #@ resourceGroupK8SName
-  namespace: #@ data.values.resource_namespace
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
   annotations:
     serviceoperator.azure.com/operator-namespace: #@ data.values.aso_controller_namespace
-#@ if data.values.use_existing_resource_group:
+#@ if/end data.values.resource_group.use_existing:
     serviceoperator.azure.com/reconcile-policy: skip
-#@ end
   labels:
     kapp.k14s.io/noop: ""
 spec:
-  azureName: #@ data.values.resource_group
+  azureName: #@ data.values.resource_group.name
   location: #@ data.values.location
-
-#@ databaseCounter = 0
-#@ for db in data.values.databases:
-#@   dbName = db.name
-#@   if dbName == "":
-#@     dbName = flexibleServerName + "-" + str(databaseCounter)
-#@     databaseCounter += 1
-#@   end
+  tags: #@ tags(data.values.resource_group.tags)
 ---
 apiVersion: dbforpostgresql.azure.com/v1beta20210601
 kind: FlexibleServersDatabase
 metadata:
-  name: #@ dbName
-  namespace: #@ data.values.resource_namespace
+  name: #@ data.values.name
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 spec:
-  azureName: #@ dbName
+  azureName: #@ databaseName
   owner:
     name: #@ flexibleServerName
-  charset: #@ db.charset
-  collation: #@ db.collation
-#@ end
+  charset: utf8
+  tags: #@ tags(data.values.database.tags)
 
 #@ fwRuleCounter = 0
-#@ for val in data.values.firewall_rules:
-#@   startAddr = ip.parse_addr(val.startIp)
-#@   endAddr = ip.parse_addr(val.endIp)
+#@ for rule in firewallRules:
+#@   startAddr = ip.parse_addr(rule["startIpAddress"])
+#@   endAddr = ip.parse_addr(rule["endIpAddress"])
 --- 
 apiVersion: dbforpostgresql.azure.com/v1beta20210601
 kind: FlexibleServersFirewallRule
 metadata:
-  name: #@ data.values.resource_name + "-" + str(fwRuleCounter)
-  namespace: #@ data.values.resource_namespace
+  name: #@ data.values.name + "-" + str(fwRuleCounter)
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 spec:
   owner:
     name: #@ flexibleServerName
   startIpAddress: #@ startAddr.string()
   endIpAddress: #@ endAddr.string()
+  tags: #@ tags(rule["tags"])
 #@   fwRuleCounter += 1
 #@ end  
 ---
@@ -113,22 +127,24 @@ apiVersion: dbforpostgresql.azure.com/v1beta20210601
 kind: FlexibleServer
 metadata:
   name: #@ flexibleServerName
-  namespace: #@ data.values.resource_namespace
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 spec:
   location: #@ data.values.location
   azureName: #@ flexibleServerName
   owner:
     name: #@ resourceGroupK8SName
-  version: #@ data.values.version
+  version: #@ data.values.server.version
   sku:
-    name: #@ data.values.instance_type
-    tier: #@ data.values.instance_tier
-  administratorLogin: #@ data.values.administrator_name
+    name: #@ data.values.server.instance_type
+    tier: #@ data.values.server.instance_tier
+  administratorLogin: #@ data.values.server.administrator_name
   administratorLoginPassword:
     name: #@ dbSecretName
     key: password
   storage:
-    storageSizeGB: #@ data.values.instance_storage_size_gb
+    storageSizeGB: #@ data.values.server.instance_storage_size_gb
+  tags: #@ tags(data.values.server.tags)
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -140,7 +156,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: #@ roleName
-  namespace: #@ data.values.resource_namespace
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 rules:
 - apiGroups:
   - ""
@@ -151,19 +168,18 @@ rules:
   - list
   - watch
   resourceNames:
-  - #@ data.values.resource_name
+  - #@ data.values.name
 - apiGroups:
   - dbforpostgresql.azure.com
   resources:
   - flexibleservers
   - flexibleserversdatabases
-  - flexibleserversfirewallrule
   verbs:
   - get
   - list
   - watch
   resourceNames:
-  - #@ data.values.resource_name
+  - #@ data.values.name
 - apiGroups:
   - resources.azure.com
   resources:
@@ -173,13 +189,14 @@ rules:
   - list
   - watch
   resourceNames:
-  - #@ data.values.resource_name
+  - #@ resourceGroupK8SName
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: #@ roleName
-  namespace: #@ data.values.resource_namespace
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -192,8 +209,9 @@ subjects:
 apiVersion: secretgen.carvel.dev/v1alpha1
 kind: SecretTemplate
 metadata:
-  name: #@ data.values.resource_name + "-bindable"
-  namespace: #@ data.values.resource_namespace
+  name: #@ data.values.name + "-bindable"
+#@ if/end data.values.namespace:
+  namespace: #@ data.values.namespace
 spec:
   serviceAccountName: #@ serviceAccountName
   inputResources:
@@ -206,7 +224,7 @@ spec:
     ref:
       apiVersion: dbforpostgresql.azure.com/v1alpha1api20210601
       kind: FlexibleServersDatabase
-      name: #@ data.values.resource_name
+      name: #@ data.values.name
   - name: creds
     ref:
       apiVersion: v1
@@ -215,7 +233,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: #@ data.values.resource_name
+        app.kubernetes.io/component: #@ data.values.name
         app.kubernetes.io/instance: "$(.server.metadata.name)"
         services.apps.tanzu.vmware.com/class: azure-postgres
     type: postgresql

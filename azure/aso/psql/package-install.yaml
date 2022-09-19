@@ -20,27 +20,21 @@ metadata:
   namespace: psql-1  
 stringData:
   values.yml: |
+    name: psql-1
+    namespace: psql-1
     create_namespace: false
-    use_existing_resource_group: false
-    resource_group: psql-1
-    resource_name: psql-1
-    resource_namespace: psql-1
-    location: westeurope
-    version: "13"
-    administrator_name: trpadmin
-
     aso_controller_namespace: azureserviceoperator-system
-
-    instance_type: Standard_D4s_v3
-    instance_tier: GeneralPurpose
-    instance_storage_size_gb: 128
-
+    resource_group:
+      name: psql-1
+      use_existing_resource_group: false
+    server:
+      version: "13"
+      administrator_name: trpadmin
+      instance_type: Standard_D4s_v3
+      instance_tier: GeneralPurpose
+      instance_storage_size_gb: 128
+    database:
+      name: testdb
     firewall_rules:
-    - startIp: 0.0.0.0
-      endIp: 0.0.0.0
-
-    databases:
-    - name: "psql-1"
-    - name: ""
-
-
+      - startIpAddress: 0.0.0.0
+        endIpAddress: 0.0.0.0
