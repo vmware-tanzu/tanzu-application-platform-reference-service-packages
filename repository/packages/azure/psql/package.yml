@@ -1,18 +1,19 @@
+---
 apiVersion: data.packaging.carvel.dev/v1alpha1
 kind: Package
 metadata:
   creationTimestamp: null
-  name: psql.azure.references.services.apps.tanzu.vmware.com.0.21.3
+  name: psql.azure.references.services.apps.tanzu.vmware.com.0.0.1-alpha
 spec:
   refName: psql.azure.references.services.apps.tanzu.vmware.com
-  releasedAt: "2022-09-22T16:17:18Z"
+  releasedAt: "2022-09-26T10:17:49Z"
   template:
     spec:
       deploy:
       - kapp: {}
       fetch:
       - imgpkgBundle:
-          image: ghcr.io/vmware-tanzu-labs/trp-azure-psql@sha256:e5273456efc9b5b352f15a283aeacff8f717da49c0225e5293f9552de162f1e7
+          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.azure.references.services.apps.tanzu.vmware.com@sha256:c8342f48fce1c27d84a51efb923eefee077ea4b457a3df109598363068641dd9
       template:
       - ytt:
           paths:
@@ -207,6 +208,13 @@ spec:
                 Standard_{VM name})
               title: InstanceType
               type: string
+            name:
+              default: ""
+              description: Flexible Server name. It must be unique across all Azure
+                postgres database instances. Only lowercase letters, numbers and hyphens
+                are allowed.
+              title: Name
+              type: string
             tags:
               default: []
               description: Tags to attach to the object
@@ -235,4 +243,4 @@ spec:
           title: FlexibleServer
           type: object
       type: object
-  version: 0.21.3
+  version: 0.0.1-alpha

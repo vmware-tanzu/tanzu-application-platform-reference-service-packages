@@ -46,6 +46,11 @@ location: ""
 #@schema/title "FlexibleServer"
 #@schema/desc "FlexibleServer instance that will be created"
 server:
+
+  #@schema/title "Name"
+  #@schema/desc "Flexible Server name. It must be unique across all Azure postgres database instances. Only lowercase letters, numbers and hyphens are allowed."
+  name: ""
+
   #@schema/title "Version"
   #@schema/desc "PostgreSQL version to deploy (only 11, 12 and 13 are currently supported"
   version: "13"

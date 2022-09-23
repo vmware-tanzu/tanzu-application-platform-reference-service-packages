@@ -11,7 +11,7 @@
 #@  return(tags_map)
 #@ end
 
-#@ flexibleServerName    = data.values.name
+#@ flexibleServerK8SName    = data.values.name
 #@ dbSecretName          = data.values.name
 #@ resourceGroupK8SName  = data.values.name
 #@ serviceAccountName      = data.values.name + "-reader"
@@ -99,7 +99,7 @@ metadata:
 spec:
   azureName: #@ databaseName
   owner:
-    name: #@ flexibleServerName
+    name: #@ flexibleServerK8SName
   charset: utf8
   tags: #@ tags(data.values.database.tags)
 
@@ -116,7 +116,7 @@ metadata:
   namespace: #@ data.values.namespace
 spec:
   owner:
-    name: #@ flexibleServerName
+    name: #@ flexibleServerK8SName
   startIpAddress: #@ startAddr.string()
   endIpAddress: #@ endAddr.string()
   tags: #@ tags(rule["tags"])
@@ -126,12 +126,12 @@ spec:
 apiVersion: dbforpostgresql.azure.com/v1beta20210601
 kind: FlexibleServer
 metadata:
-  name: #@ flexibleServerName
+  name: #@ flexibleServerK8SName
 #@ if/end data.values.namespace:
   namespace: #@ data.values.namespace
 spec:
   location: #@ data.values.location
-  azureName: #@ flexibleServerName
+  azureName: #@ data.values.server.name or flexibleServerK8SName
   owner:
     name: #@ resourceGroupK8SName
   version: #@ data.values.server.version
@@ -150,6 +150,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: #@ serviceAccountName
+#@ if/end serviceAccountNamespace:
   namespace: #@ serviceAccountNamespace
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -204,6 +205,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: #@ serviceAccountName
+#@ if/end serviceAccountNamespace:
   namespace: #@ serviceAccountNamespace
 ---
 apiVersion: secretgen.carvel.dev/v1alpha1
@@ -219,7 +221,7 @@ spec:
     ref:
       apiVersion: dbforpostgresql.azure.com/v1alpha1api20210601
       kind: FlexibleServer
-      name: #@ flexibleServerName
+      name: #@ flexibleServerK8SName
   - name: db
     ref:
       apiVersion: dbforpostgresql.azure.com/v1alpha1api20210601
