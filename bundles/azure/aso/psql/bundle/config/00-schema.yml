@@ -48,7 +48,7 @@ location: ""
 server:
 
   #@schema/title "Name"
-  #@schema/desc "Flexible Server name. It must be unique across all Azure postgres database instances. Only lowercase letters, numbers and hyphens are allowed."
+  #@schema/desc "Flexible Server name. It must be unique across all Azure postgres database instances. Only lowercase letters, digits and hyphens are allowed."
   name: ""
 
   #@schema/title "Version"
