@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: psql-install
+  namespace: psql-1  
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: psql-install
+  namespace: psql-1  
+rules:
+- apiGroups: ["dbforpostgresql.azure.com"]
+  resources: ["flexibleservers","flexibleserversdatabases","flexibleserversfirewallrules"]
+  verbs:     ["*"]
+- apiGroups: ["resources.azure.com"]
+  resources: ["resourcegroups"]
+  verbs:     ["*"]  
+- apiGroups: ["secretgen.carvel.dev", "secretgen.k14s.io"]
+  resources: ["secrettemplates","passwords"]
+  verbs:     ["*"]
+- apiGroups: [""]
+  resources: ["serviceaccounts","configmaps"]
+  verbs:     ["*"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs:     ["get", "list"]  
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles","rolebindings"]
+  verbs:     ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: psql-install
+  namespace: psql-1  
+subjects:
+- kind: ServiceAccount
+  name: psql-install
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: psql-install

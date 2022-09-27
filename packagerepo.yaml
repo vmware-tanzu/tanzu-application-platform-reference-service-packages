@@ -3,8 +3,10 @@ apiVersion: packaging.carvel.dev/v1alpha1
 kind: PackageRepository
 metadata:
   name: tap-reference-service-packages
-  namespace: tanzu-package-repo-global #! note this may be different in kapp was not installed through cluster-essentials
+  namespace: tanzu-package-repo-global #! NOTE this may be different if kapp was not installed through cluster-essentials
+  #! the kapp-controller global namespace can be obtained as follows
+  #! kubectl -n kapp-controller get deployment kapp-controller -o json | jq -r '.spec.template.spec.containers[]|select(.name=="kapp-controller").args[]|select(.|startswith("-packaging-global-namespace"))|split("=")[1]'
 spec:
   fetch:
     imgpkgBundle:
-      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.2
+      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.3
