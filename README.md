@@ -44,7 +44,7 @@ Follow the instructions for a specific Service Instance below:
 | [Google Cloud SQL]                    | SQLInstance, SQLDatabase, SQLUser                                                    | Create Cloud SQL instances                     | 🚧 Experimental  |
 
 [Amazon RDS]: ./amazon/ack/rds/README.md
-[Azure FlexibleServer for PostgreSQL]: ./azure/aso/README.md
+[Azure FlexibleServer for PostgreSQL]: ./azure/aso/psql/README.md
 [Google Cloud SQL]: ./google/config-connector/cloudsql/README.md
 
 ## Building the Package Repository

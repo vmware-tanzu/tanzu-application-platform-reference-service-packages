@@ -8,7 +8,7 @@ spec:
   packageRef:
     refName: psql.azure.references.services.apps.tanzu.vmware.com
     versionSelection:
-      constraints: 0.16.0
+      constraints: 0.0.1-alpha
   values:
   - secretRef:
       name: psql-1-values
