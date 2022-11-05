@@ -1,0 +1,29 @@
+name: Deploy gh-pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - mkdocs.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      - name: Install Python requirements
+        run: pip install -r requirements.txt 
+
+      - name: Deploy GitHub Pages
+        run: mkdocs gh-deploy -b gh-pages
