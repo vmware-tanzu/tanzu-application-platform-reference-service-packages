@@ -2,12 +2,27 @@
 apiVersion: imgpkg.carvel.dev/v1alpha1
 images:
 - annotations:
+    kbld.carvel.dev/id: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com@sha256:cd0ed7ad049c51116e57d604c62214344d1f53b18c5a9c189329839a80401caa
+    kbld.carvel.dev/origins: |
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com@sha256:cd0ed7ad049c51116e57d604c62214344d1f53b18c5a9c189329839a80401caa
+  image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com@sha256:cd0ed7ad049c51116e57d604c62214344d1f53b18c5a9c189329839a80401caa
+- annotations:
     kbld.carvel.dev/id: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.aws.references.services.apps.tanzu.vmware.com@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
+    kbld.carvel.dev/origins: |
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.aws.references.services.apps.tanzu.vmware.com@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
   image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.aws.references.services.apps.tanzu.vmware.com@sha256:01481af67e9be08c466e7d98eb1e2e0e904a4965d289d793c41d316aeef59332
 - annotations:
     kbld.carvel.dev/id: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.azure.references.services.apps.tanzu.vmware.com@sha256:c8342f48fce1c27d84a51efb923eefee077ea4b457a3df109598363068641dd9
+    kbld.carvel.dev/origins: |
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.azure.references.services.apps.tanzu.vmware.com@sha256:c8342f48fce1c27d84a51efb923eefee077ea4b457a3df109598363068641dd9
   image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.azure.references.services.apps.tanzu.vmware.com@sha256:c8342f48fce1c27d84a51efb923eefee077ea4b457a3df109598363068641dd9
 - annotations:
     kbld.carvel.dev/id: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.google.references.services.apps.tanzu.vmware.com@sha256:9fc1a2767adac504e06d6eb8c9b2cbecc887ad605e3652401f26dc101abd1c6d
+    kbld.carvel.dev/origins: |
+      - preresolved:
+          url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.google.references.services.apps.tanzu.vmware.com@sha256:9fc1a2767adac504e06d6eb8c9b2cbecc887ad605e3652401f26dc101abd1c6d
   image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/psql.google.references.services.apps.tanzu.vmware.com@sha256:9fc1a2767adac504e06d6eb8c9b2cbecc887ad605e3652401f26dc101abd1c6d
 kind: ImagesLock

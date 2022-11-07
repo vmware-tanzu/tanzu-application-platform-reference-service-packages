@@ -39,11 +39,13 @@ Follow the instructions for a specific Service Instance below:
 
 | Type                                  | Resource(s)                                                                          | Description                                    | Status           |
 | ------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------- | ---------------- |
-| [Amazon RDS]                          | DBInstance                                                                           | Create RDS instances                           | 🚧 Experimental  |
+| [AWS Elasticache]                     | ReplicationGroup, User, UserGroup                                                    | Create Elasticache for Redis instances         | 🚧 Experimental  |
+| [AWS RDS]                             | DBInstance                                                                           | Create RDS instances                           | 🚧 Experimental  |
 | [Azure FlexibleServer for PostgreSQL] | ResourceGroup, FlexibleServer, FlexibleServersDatabase, FlexibleServersFirewallRule  | Create FlexibleServer for PostgreSQL instances | 🚧 Experimental  |
 | [Google Cloud SQL]                    | SQLInstance, SQLDatabase, SQLUser                                                    | Create Cloud SQL instances                     | 🚧 Experimental  |
 
-[Amazon RDS]: ./amazon/ack/rds/README.md
+[AWS Elasticache]: ./amazon/ack/elasticache/README.md
+[AWS RDS]: ./amazon/ack/rds/README.md
 [Azure FlexibleServer for PostgreSQL]: ./azure/aso/psql/README.md
 [Google Cloud SQL]: ./google/config-connector/cloudsql/README.md
 
@@ -69,7 +71,8 @@ imgpkg push -b ${REPO_HOST}:${TAG} -f repository
 
 The tanzu-application-platform-reference-service-packages project team welcomes contributions from the community. Before you start working with this project please
 read and sign our Contributor License Agreement (<https://cla.vmware.com/cla/1/preview>). If you wish to contribute code and you have not signed our
-Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For more detailed information, refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributor Licence Agreement (CLA), our bot will prompt you to do so when you open a Pull Request. For more detailed information, refer to
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

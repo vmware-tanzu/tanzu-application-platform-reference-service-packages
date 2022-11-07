@@ -1,0 +1,64 @@
+#@data/values-schema
+---
+#@schema/title "Name"
+#@schema/desc "Name of the Elasticache instance."
+name: ""
+
+#@schema/title "Namespace"
+#@schema/desc "Namespace to deploy the kubernetes resources to."
+namespace: ""
+
+#@schema/title "CreateNamespace"
+#@schema/desc "Whether to create the namespace for the resources or not."
+createNamespace: False
+
+#@schema/title "CacheSubnetGroupName"
+#@schema/desc "Name of the cache subnet group to create the replication group in. It must be pre-created if the createCacheSubnetGroup parameter is set to false."
+cacheSubnetGroupName: ""
+
+#@schema/title "CreateCacheSubnetGroup"
+#@schema/desc "Whether to create the CacheSubnetGroup or not."
+createCacheSubnetGroup: false
+
+#@schema/title "SubnetIDs"
+#@schema/desc "The list of subnets to create the CacheSubnetGroup for. Mandatory if the createCacheSubnetGroup parameter is set to true."
+subnetIDs:
+  - ""
+
+#@schema/title "CacheNodeType"
+#@schema/desc "Type of nodes used for the replication group."
+cacheNodeType: "cache.t2.micro"
+
+#@schema/title "VpcSecurityGroupIDs"
+#@schema/desc "The list of security groups to associate to the replication group."
+vpcSecurityGroupIDs:
+  - ""
+
+#@schema/title "InstanceClassName"
+#@schema/desc "The name of the instance class we want to use for binding secrets."
+instanceClassName: aws-elasticache
+#@schema/title "Service Instance Labels"
+#@schema/desc "A set of labels which will be applied to the claimable secret."
+#@schema/default {}
+#@schema/type any=True
+serviceInstanceLabels:
+
+#@schema/title "EngineVersion"
+#@schema/desc "The version of the Redis engine to use. Available versions can be obtained running `aws cdescribe-cache-engine-versions --engine redis`."
+engineVersion: "6.2"
+
+#@schema/title "ReplicasPerNodeGroup"
+#@schema/desc "Number of replicas per node group. Allowed values are from 0 to 5."
+replicasPerNodeGroup: 0
+
+#@schema/title "Tags"
+#@schema/desc "Tags to attach to all the resources."
+#@schema/default []
+tags:
+  -
+    #@schema/title "Key"
+    #@schema/desc "The name of the tag."
+    key: ""
+    #@schema/title "Value"
+    #@schema/desc "The value of the tag."
+    value: ""

@@ -9,4 +9,4 @@ metadata:
 spec:
   fetch:
     imgpkgBundle:
-      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.3
+      image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages:0.0.4-alpha.0
