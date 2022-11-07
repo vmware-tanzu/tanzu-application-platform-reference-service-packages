@@ -1,0 +1,17 @@
+---
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: PackageMetadata
+metadata:
+  creationTimestamp: null
+  name: elasticache.aws.references.services.apps.tanzu.vmware.com
+spec:
+  categories:
+  - services
+  displayName: AWS Elasticache instances
+  longDescription: |
+    Helps you install an AWS Elasticache for Redis using ACK
+  maintainers:
+  - name: The TAP Reference Packages Team
+  providerName: VMware
+  shortDescription: elasticache.services.k8s.aws
+  supportDescription: Not supported - provided as reference package only

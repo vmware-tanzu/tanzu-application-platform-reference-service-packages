@@ -1,0 +1,122 @@
+---
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: Package
+metadata:
+  annotations:
+    kbld.k14s.io/images: |
+      - origins:
+        - resolved:
+            tag: 0.0.1-alpha
+            url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com:0.0.1-alpha
+        url: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com@sha256:cd0ed7ad049c51116e57d604c62214344d1f53b18c5a9c189329839a80401caa
+  creationTimestamp: null
+  name: elasticache.aws.references.services.apps.tanzu.vmware.com.0.0.1-alpha
+spec:
+  refName: elasticache.aws.references.services.apps.tanzu.vmware.com
+  releasedAt: "2022-10-19T09:41:52Z"
+  template:
+    spec:
+      deploy:
+      - kapp: {}
+      fetch:
+      - imgpkgBundle:
+          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/elasticache.aws.references.services.apps.tanzu.vmware.com@sha256:cd0ed7ad049c51116e57d604c62214344d1f53b18c5a9c189329839a80401caa
+      template:
+      - ytt:
+          paths:
+          - config
+      - kbld:
+          paths:
+          - '-'
+          - .imgpkg/images.yml
+  valuesSchema:
+    openAPIv3:
+      additionalProperties: false
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Name of the Elasticache instance.
+          default: ""
+        namespace:
+          title: Namespace
+          type: string
+          description: Namespace to deploy the kubernetes resources to.
+          default: ""
+        createNamespace:
+          title: CreateNamespace
+          type: boolean
+          description: Whether to create the namespace for the resources or not.
+          default: false
+        cacheSubnetGroupName:
+          title: CacheSubnetGroupName
+          type: string
+          description: Name of the cache subnet group to create the replication group in. It must be pre-created if the createCacheSubnetGroup parameter is set to false.
+          default: ""
+        createCacheSubnetGroup:
+          title: CreateCacheSubnetGroup
+          type: boolean
+          description: Whether to create the CacheSubnetGroup or not.
+          default: false
+        subnetIDs:
+          title: SubnetIDs
+          type: array
+          description: The list of subnets to create the CacheSubnetGroup for. Mandatory if the createCacheSubnetGroup parameter is set to true.
+          items:
+            type: string
+            default: ""
+          default: []
+        cacheNodeType:
+          title: CacheNodeType
+          type: string
+          description: Type of nodes used for the replication group.
+          default: cache.t2.micro
+        vpcSecurityGroupIDs:
+          title: VpcSecurityGroupIDs
+          type: array
+          description: The list of security groups to associate to the replication group.
+          items:
+            type: string
+            default: ""
+          default: []
+        instanceClassName:
+          title: InstanceClassName
+          type: string
+          description: The name of the instance class we want to use for binding secrets.
+          default: aws-elasticache
+        serviceInstanceLabels:
+          title: Service Instance Labels
+          nullable: true
+          description: A set of labels which will be applied to the claimable secret.
+          default: {}
+        engineVersion:
+          title: EngineVersion
+          type: string
+          description: The version of the Redis engine to use. Available versions can be obtained running `aws cdescribe-cache-engine-versions --engine redis`.
+          default: "6.2"
+        replicasPerNodeGroup:
+          title: ReplicasPerNodeGroup
+          type: integer
+          description: Number of replicas per node group. Allowed values are from 0 to 5.
+          default: 0
+        tags:
+          title: Tags
+          type: array
+          description: Tags to attach to all the resources.
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              key:
+                title: Key
+                type: string
+                description: The name of the tag.
+                default: ""
+              value:
+                title: Value
+                type: string
+                description: The value of the tag.
+                default: ""
+          default: []
+      type: object
+  version: 0.0.1-alpha

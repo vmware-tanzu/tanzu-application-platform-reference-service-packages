@@ -1,0 +1,32 @@
+---
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageInstall
+metadata:
+  name: elasticache-01
+  namespace: elasticache-01
+spec:
+  packageRef:
+    refName: elasticache.aws.references.services.apps.tanzu.vmware.com
+    versionSelection:
+      constraints: 0.0.1-alpha
+  serviceAccountName: elasticache-install
+  values:
+    - secretRef:
+        name: elasticache-01-values
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name:  elasticache-01-values
+  namespace: elasticache-01
+stringData:
+  values.yml: |
+    name: redis-01
+    namespace: elasticache-01
+    cacheSubnetGroupName: redis
+    cacheNodeType: cache.t2.micro
+    vpcSecurityGroupIDs:
+      - sg-0a4ddae4fbf426cc8
+    tags:
+      - key: Generator
+        value: Carvel package

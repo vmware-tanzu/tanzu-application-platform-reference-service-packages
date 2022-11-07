@@ -1,0 +1,221 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:template", "template")
+
+#@ def get_id(x): return "{}-{}".format(data.values.name, x)
+
+#@ def tags(resource_tags=[]):
+#@   return [ x for x in (data.values.tags + resource_tags) if x["key"] != "" and x["value"] != "" ]
+#@ end
+
+#@ users = {
+#@   "reader": { "access_string": "on ~* -@all +@read" },
+#@   "writer": { "access_string": "on ~* +@all" },
+#@ }
+
+#! only Redis is currently supported
+#@ engine = "redis"
+
+#@ replicationGroupName = data.values.name
+
+#@ service_account_name = "{}-{}".format(data.values.name, "elasticache-reader")
+#@ role_name = service_account_name
+
+#! a user with name "default" must be present in every usergroup
+#! the elasticache "default" user has all permissions and no password -> unsuitable
+#! this creates a new "default" user with no permissions
+#@ default_user = { "id": get_id("default"), "access_string": "off ~* -@all" }
+
+#@ mandatory_fields = [ "name", "namespace", "cacheSubnetGroupName", "cacheNodeType", "vpcSecurityGroupIDs" ]
+#@ missing_fields = []
+#@ for field in mandatory_fields:
+#@   if len(data.values[field]) == 0:
+#@     missing_fields.append(field)
+#@   end
+#@ end
+
+#@ if len(missing_fields) > 0:
+#@   assert.fail("Missing values for mandatory fields '{}'".format(missing_fields))
+#@ end
+
+#@ if data.values.createCacheSubnetGroup and len(data.values.subnetIDs) == 0:
+#@   assert.fail("SubnetIDs not provided for CacheSubnetGroup creation")
+#@ end
+
+#@ if data.values.createNamespace and data.values.namespace:
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: #@ data.values.namespace
+#@ end
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: User
+metadata:
+  name: #@ default_user["id"]
+  namespace: #@ data.values.namespace
+spec:
+  accessString: #@ default_user["access_string"]
+  noPasswordRequired: true
+  engine: #@ engine
+  userID: #@ default_user["id"]
+  userName: default
+  tags: #@ tags()
+
+#@ for user_name in users:
+#@   user_id = get_id(user_name)
+#@   user_creds = "{}-{}".format(user_id,"creds")
+#@   users[user_name].update({ "id": user_id, "creds": user_creds })
+---
+apiVersion: secretgen.k14s.io/v1alpha1
+kind: Password
+metadata:
+  name: #@ user_creds
+  namespace: #@ data.values.namespace
+spec:
+  length: 128
+  secretTemplate:
+    type: Opaque
+    stringData:
+      password: $(value)
+---
+apiVersion: secretgen.carvel.dev/v1alpha1
+kind: SecretTemplate
+metadata:
+  name: #@ "{}-bindable".format(user_creds)
+  namespace: #@ data.values.namespace
+spec:
+  serviceAccountName: #@ service_account_name
+  inputResources:
+  - name: replicationGroup
+    ref:
+      apiVersion: elasticache.services.k8s.aws/v1alpha1
+      kind: ReplicationGroup
+      name: #@ data.values.name
+  - name: creds
+    ref:
+      apiVersion: v1
+      kind: Secret
+      name: #@ user_creds
+  template:
+    metadata:
+      labels:
+        services.apps.tanzu.vmware.com/class: #@ data.values.instanceClassName
+        _serviceInstanceLabels: #@ template.replace(data.values.serviceInstanceLabels)
+    type: servicebinding.io/redis
+    stringData:
+      type: redis
+      username: #@ user_name
+      ssl: "true"
+      host: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.address)
+      port: $(.replicationGroup.status.nodeGroups[0].primaryEndpoint.port)
+    data:
+      password: "$(.creds.data.password)"
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: User
+metadata:
+  name: #@ user_id
+  namespace: #@ data.values.namespace
+spec:
+  accessString: #@ users[user_name]["access_string"]
+  engine: #@ engine
+  passwords:
+  - name: #@ user_creds
+    key: password
+    namespace: #@ data.values.namespace
+  userID: #@ user_id
+  userName: #@ user_name
+  tags: #@ tags()
+#@ end
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: UserGroup
+metadata:
+  name: #@ data.values.name
+  namespace: #@ data.values.namespace
+spec:
+  engine: #@ engine
+  userGroupID: #@ data.values.name
+  userIDs: #@ [ default_user["id"] ] + [ get_id(u) for u in users ]
+  tags: #@ tags()
+
+#@ if data.values.createCacheSubnetGroup:
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: CacheSubnetGroup
+metadata:
+  name: #@ data.values.cacheSubnetGroupName
+  namespace: #@ data.values.namespace
+spec:
+  cacheSubnetGroupDescription: #@ "CacheSubnetGroup for {}".format(data.values.name)
+  cacheSubnetGroupName: #@ data.values.cacheSubnetGroupName
+  subnetIDs: #@ data.values.subnetIDs
+#@ end
+---
+apiVersion: elasticache.services.k8s.aws/v1alpha1
+kind: ReplicationGroup
+metadata:
+  name: #@ replicationGroupName
+  namespace: #@ data.values.namespace
+spec:
+  description: #@ "A {} service instance".format(engine)
+  engine: #@ engine
+  engineVersion: #@ data.values.engineVersion
+  replicationGroupID: #@ replicationGroupName
+  cacheNodeType: #@ data.values.cacheNodeType
+  cacheSubnetGroupName: #@ data.values.cacheSubnetGroupName
+  securityGroupIDs: #@ data.values.vpcSecurityGroupIDs
+  atRestEncryptionEnabled: true
+  transitEncryptionEnabled: true
+  replicasPerNodeGroup: #@ data.values.replicasPerNodeGroup
+  userGroupIDs:
+  - #@ data.values.name
+  tags: #@ tags()
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames: #@ [ users[u]["creds"] for u in users ]
+- apiGroups:
+  - elasticache.services.k8s.aws
+  resources:
+  - replicationgroups
+  verbs:
+  - get
+  - list
+  - watch
+  resourceNames:
+  - #@ data.values.name
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: #@ role_name
+  namespace: #@ data.values.namespace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ role_name
+subjects:
+- kind: ServiceAccount
+  name: #@ service_account_name
+  namespace: #@ data.values.namespace
