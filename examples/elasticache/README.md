@@ -4,7 +4,7 @@ Sample Redis App's purpose is testing AWS Elasticache reference package using th
 
 ## Docker build image
 
-In order to build a docker image, a `Dockerfile` is provided:
+To containerize this sample Redis app use the `Dockerfile` below:
 
 ```docker
 # builder
@@ -35,7 +35,7 @@ USER 1000
 ENTRYPOINT ./redis-app
 ```
 
-Build a fresh docker image locally with the sample redis app:
+Build it running the following command:
 
 ```shell
 docker buildx build . --platform linux/amd64 --tag <IMAG NAME>:<IMAGE TAG>
@@ -44,10 +44,10 @@ docker buildx build . --platform linux/amd64 --tag <IMAG NAME>:<IMAGE TAG>
 
 ## Out Of the Box images
 
-Github Actions automate the build of the sample_apps-redis app. All images can be found and pull from:
+Github Actions automate the build of the sample_apps-redis app. All images can be retrieved [here](https://github.com/bzhtux/sample_apps/pkgs/container/sample_apps-redis/versions).
 
 ```text
-https://github.com/bzhtux/sample_apps/pkgs/container/sample_apps-redis/versions
+
 ```
 
 ```shell
@@ -207,7 +207,7 @@ metadata:
 spec:
   ingressClassName: contour
   rules:
-  - host: app-redis.127.0.0.1.nip.io
+  - host: goredis.127.0.0.1.nip.io
     http:
       paths:
       - backend: 
@@ -293,14 +293,14 @@ spec:
       - name: redis-app
         image: ghcr.io/bzhtux/sample_apps-redis:v0.0.7
         volumeMounts:
-        - name: services-binddings
+        - name: services-bindings
           mountPath: "/bindings"
           readOnly: true
         env:
           - name: SERVICE_BINDING_ROOT
             value: "/bindings"
       volumes:
-      - name: services-binddings
+      - name: services-bindings
         projected:
           sources:
           - secret:
@@ -369,7 +369,7 @@ EOF
 Test the deployment:
 
 ```shell
-curl -sL http://app-redis.127.0.0.1.nip.io/ | jq .
+curl -sL http://goredis.127.0.0.1.nip.io/ | jq .
 {
   "message": "Alive",
   "status": "Up"
