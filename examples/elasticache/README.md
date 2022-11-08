@@ -88,7 +88,7 @@ kubectl cluster-info --context kind-kind
 
 ### Namespace
 
-Create a new `namespace` to deploy the sample_apps-posstgres and a postgreeSQL DB:
+Create a new `namespace` to deploy the sample_apps-redis with a Redis DB:
 
 ```shell
 kubectl create namespace redis-app
