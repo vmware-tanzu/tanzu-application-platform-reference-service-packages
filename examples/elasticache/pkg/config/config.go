@@ -6,6 +6,7 @@ import (
 
 	"github.com/bzhtux/servicebinding/bindings"
 	"github.com/kelseyhightower/envconfig"
+	. "github.com/mitchellh/mapstructure"
 	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/elasticache/models"
 	"gopkg.in/yaml.v2"
 )
@@ -44,12 +45,9 @@ func (rc *RedisConfig) LoadConfigFromBindings(t string) error {
 		log.Printf("Error while getting bindings: %s\n", err.Error())
 		return err
 	}
-	rc.Host = b.Host
-	rc.Port = int(b.Port)
-	rc.Username = b.Username
-	rc.Password = b.Password
-	rc.DB = b.Database
-	rc.SSLenabled = b.SSL
+	if err := Decode(b, &rc); err != nil {
+		return err
+	}
 	return nil
 }
 
