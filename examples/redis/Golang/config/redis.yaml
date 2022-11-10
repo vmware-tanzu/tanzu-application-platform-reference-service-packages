@@ -1,0 +1,7 @@
+---
+host: "localhost"
+port: 6379
+username: default
+password:  MySupersecretP@ssword!
+database: "0"
+sslenabled: false
