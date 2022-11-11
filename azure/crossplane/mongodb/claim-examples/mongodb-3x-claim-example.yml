@@ -1,0 +1,21 @@
+apiVersion: azure.ref.services.apps.tanzu.vmware.com/v1alpha1
+kind: MongoDBInstance
+metadata:
+  namespace: default
+  name: trp-cosmosdb-mongo-08
+spec:
+  compositionSelector:
+    matchLabels:
+      database: mongodb
+  parameters:
+    location: "West Europe"
+    capabilities:
+      - name: "EnableMongo"
+      - name: "mongoEnableDocLevelTTL"
+  publishConnectionDetailsTo:
+    name: trp-cosmosdb-mongo-bindable-08
+    configRef:
+      name: default
+    metadata:
+      labels:
+        services.apps.tanzu.vmware.com/class: azure-mongodb

@@ -1,0 +1,81 @@
+name: MongoDB E2E Crossplane
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+    branches: main
+    paths:
+      - 'azure/crossplane/mongodb/**'
+
+env:
+  PACKAGE_PROVIDER: azure
+  PACKAGE_NAME: mongodb
+
+jobs:
+  pre-publish:
+    uses: ./.github/workflows/crossplane-prepublish.yml
+
+  publish:
+    needs:
+      - pre-publish
+    uses: ./.github/workflows/crossplane-publish.yml
+    with:
+      package: "mongodb"
+      provider: "azure"
+      version: ${{ needs.pre-publish.outputs.version }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs:
+      - pre-publish
+      - publish
+    env:
+      CONFIG_VERSION: ${{ needs.pre-publish.outputs.version }}
+      CONFIG_IMAGE: ${{ needs.publish.outputs.package_registry }}/${{ needs.publish.outputs.package_repository }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install UXP
+        run: |
+          curl -sL "https://cli.upbound.io" | sh
+          sudo mv up /usr/local/bin/
+          up --version
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.4.0
+        with:
+          verbosity: 5
+          version: "v0.16.0"
+          kubectl_version: "v1.24.6"
+          node_image: kindest/node:v1.24.6@sha256:97e8d00bc37a7598a0b32d1fabd155a96355c49fa0d4d4790aab0f161bf31be1
+
+      - name: Verify Cluster
+        run: |
+          kubectl version
+          which kubectl
+          kubectl cluster-info
+          kubectl get storageclass standard
+
+      - name: Create Azure Config Secret
+        run: |
+          kubectl create namespace upbound-system
+          kubectl create secret generic azure-secret -n upbound-system --from-literal=creds='${{ secrets.AZURE_CONFIG }}'
+
+      - name: Test Crossplane MongoDB Package
+        run: |
+          pushd scripts
+          ./crossplane-e2e-mongodb.sh
+          popd
+
+      - name: Cleanup MongoDB Package
+        if: always()
+        run: |
+          pushd scripts
+          ./mongodb/crossplane-e2e-cleanup.sh
+          popd

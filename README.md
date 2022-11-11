@@ -1,5 +1,7 @@
 # Tanzu Application Platform Service Reference Packages
 
+[![MongoDB E2E Crossplane](https://github.com/matteo-magni/tanzu-application-platform-reference-service-packages/actions/workflows/azure-crossplane-mongodb-e2e.yml/badge.svg?branch=develop)](https://github.com/matteo-magni/tanzu-application-platform-reference-service-packages/actions/workflows/azure-crossplane-mongodb-e2e.yml)
+
 >**Warning this repository contains references Packages that are not supported**
 
 ## Overview
