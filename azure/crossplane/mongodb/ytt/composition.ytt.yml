@@ -1,0 +1,118 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: #@ (data.values.xrd.claimNames.kind).lower()
+  labels:
+    crossplane.io/xrd: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+    provider: #@ data.values.provider.name
+    database: #@ data.values.cloudServiceBindingType
+spec:
+  publishConnectionDetailsWithStoreConfigRef:
+    name: #@ data.values.storeConfig.name
+  compositeTypeRef:
+    apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
+    kind: #@ data.values.xrd.names.kind
+  resources:
+  - name: resourcegroup
+    base: 
+      apiVersion: azure.upbound.io/v1beta1
+      kind: ResourceGroup
+      spec: {}    
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.location
+      toFieldPath: spec.forProvider.location
+  - name: account
+    base:
+      apiVersion: cosmosdb.azure.upbound.io/v1beta1
+      kind: Account
+      spec:
+        forProvider:
+          consistencyPolicy:
+            - consistencyLevel: Strong
+          geoLocation:
+            - failoverPriority: 0
+          kind: MongoDB
+          offerType: Standard
+          resourceGroupNameSelector:
+            matchControllerRef: true
+        providerConfigRef:
+          name: #@ data.values.provider.configRef
+        writeConnectionSecretToRef:
+          namespace: #@ data.values.crossplane.namespace
+    patches:
+    - type: FromCompositeFieldPath      
+      fromFieldPath: metadata.uid
+      toFieldPath: spec.writeConnectionSecretToRef.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-mongodb"
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.capabilities
+      toFieldPath: spec.forProvider.capabilities
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.mongodbVersion
+      toFieldPath: spec.forProvider.mongoServerVersion
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.location
+      toFieldPath: spec.forProvider.location
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.location
+      toFieldPath: spec.forProvider.geoLocation[0].location
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.providerConfig
+      toFieldPath: spec.providerConfigRef.name
+    - type: ToCompositeFieldPath
+      fromFieldPath: spec.forProvider.mongoServerVersion
+      toFieldPath: status.mongodbVersion
+    - type: ToCompositeFieldPath
+      fromFieldPath: spec.forProvider.location
+      toFieldPath: status.location
+    - type: ToCompositeFieldPath
+      fromFieldPath: status.atProvider.endpoint
+      toFieldPath: status.endpoint
+    connectionDetails:
+    - name: uri
+      fromConnectionSecretKey: "attribute.connection_strings.0"
+    - type: FromValue
+      name: type
+      value: #@ data.values.cloudServiceBindingType
+  - name: mongodatabase
+    base:
+      apiVersion: cosmosdb.azure.upbound.io/v1beta1
+      kind: MongoDatabase
+      spec:
+        forProvider:
+          accountNameSelector:
+            matchControllerRef: true
+          resourceGroupNameSelector:
+            matchControllerRef: true
+        providerConfigRef:
+          name: #@ data.values.provider.configRef           
+    patches:
+    connectionDetails:
+    - type: FromFieldPath
+      name: database
+      fromFieldPath: metadata.name
+  - name: mongocollection
+    base:
+      apiVersion: cosmosdb.azure.upbound.io/v1beta1
+      kind: MongoCollection
+      spec:
+        forProvider:
+          accountNameSelector:
+            matchControllerRef: true
+          databaseNameSelector:
+            matchControllerRef: true
+          resourceGroupNameSelector:
+            matchControllerRef: true
+          defaultTtlSeconds: 777
+          index:
+          - keys:
+            - _id
+            unique: true
+          shardKey: uniqueKey
+          throughput: 400
