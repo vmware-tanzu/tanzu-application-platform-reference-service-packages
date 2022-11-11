@@ -1,0 +1,43 @@
+name: Reusable pre-publish workflow
+
+on:
+
+  workflow_call:
+    outputs:
+      version:
+        value: ${{ jobs.pre-publish.outputs.version }}
+        description: The new published version
+      packages:
+        value: ${{ jobs.pre-publish.outputs.packages }}
+
+jobs:
+  pre-publish:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+      version:  ${{ steps.version_bump.outputs.new_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Bump version and push tag
+        id: version_bump
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          INITIAL_VERSION: 0.1.0
+          RELEASE_BRANCHES: main
+          PRERELEASE: true
+          DEFAULT_BUMP: patch
+
+      - name: List Packages That Have Changed
+        id: list
+        run: |
+          diffs=$(git diff-tree --no-commit-id --name-only -r --diff-filter=ACM HEAD~1 HEAD | grep -E '^[^/]+/crossplane/' | cut -d/ -f-3 | jq -ncrR '[inputs]|unique')
+          echo "diffs=${diffs}"
+          packages=$(jq -nc --argjson diffs "${diffs}" '$diffs|map(split("/")|{"PACKAGE_PROVIDER":.[0],"PACKAGE_NAME":.[2]}) | { "include": . }')
+          echo "packages=${packages}"
+          echo "packages=${packages}" >> $GITHUB_OUTPUT
