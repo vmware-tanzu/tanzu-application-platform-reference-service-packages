@@ -1,0 +1,42 @@
+#@data/values-schema
+---
+
+xrd:
+  group: multi.ref.services.apps.tanzu.vmware.com
+  names:
+    kind: XPostgreSQLInstance
+    plural: xpostgresqlinstances
+  claimNames:
+    kind: PostgreSQLInstance
+    plural: postgresqlinstances
+  version: v1alpha1
+
+configurationName: "multicloud-psql"
+cloudServiceBindingType: "postgresql"
+
+providers:
+#!  azure:
+#!    name: azure
+#!    image: xpkg.upbound.io/upbound/provider-azure
+#!    version: ">=v0.18.1"
+#!    configRef: default
+
+  helm:
+    name: helm
+    image: xpkg.upbound.io/crossplane-contrib/provider-helm
+    version: ">=v0.12.0"
+
+crossplane:
+  #@schema/title "CrossplaneNamespace"
+  #@schema/desc "The namespace where crossplane controller is installed"
+  namespace: upbound-system
+  version: '^v1.10'
+
+#@schema/title "StoreConfig"
+#@schema/desc "Details of the StoreConfig"
+storeConfig:
+  #@schema/title "StoreConfig Name"
+  #@schema/desc "The name of the StoreConfig"
+  name: "default"
+
+version: ""

@@ -1,0 +1,18 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
+kind: #@ data.values.xrd.claimNames.kind
+metadata:
+  name: postgresql-049
+  labels:
+    services.apps.tanzu.vmware.com/claimable: "true"
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: helm
+  parameters:
+    location: local
+    version: #@ data.values.version
+    database: petclinic
+    collation: en_GB.utf8
+    storageClass: gp2
