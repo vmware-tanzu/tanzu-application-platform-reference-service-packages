@@ -40,8 +40,8 @@ theme:
     text: 'Metropolis,Avenir Next,Helvetica Neue,Arial,sans-serif'
     code: 'JetBrains Mono'
 
-# extra_css:
-#   - assets/vmware.css
+extra_css:
+  - assets/extra.css
     
 plugins:
   - git-revision-date-localized:
