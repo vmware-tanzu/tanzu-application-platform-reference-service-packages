@@ -23,7 +23,7 @@ and store the desired release into the `PROVIDER_AWS_RELEASE` variable.
     === "Upbound CLI"
         Do make sure you have installed the `up` CLI as described [here](../index.md) and execute
         ```sh
-        up controlplane provider install xpkg.upbound.io/upbound/provider-aws:${PROVIDER_AWS_RELEASE}
+        up controlplane provider install xpkg.upbound.io/upbound/provider-aws:${PROVIDER_AWS_RELEASE} --name provider-aws
         ```
 
     === "YAML manifest"
@@ -52,8 +52,9 @@ The following paragraphs explain how to configure IRSA for the Crossplane AWS pr
 
 You must create a proper role for the provider to assume, for granting the necessary and sufficient permissions to manage the AWS infrastructure.
 The least-privilege principle applies, therefore it's important to understand the actual needs and create the permission policy accordingly.
-
 For example, the following snippet creates a policy that allows the role it's attached to to execute actions only on the S3 service.
+
+First of all, set your the AWS region you're operating in and your EKS cluster name.
 
 ```sh
 # AWS region you're operating in
@@ -65,10 +66,15 @@ CLUSTER_NAME="my-eks-cluster"
 # define variables for IAM
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 OIDC_ID=$(aws eks describe-cluster --name ${CLUSTER_NAME} --output text --query "cluster.identity.oidc.issuer" | cut -d/ -f3-)
-CROSSPLANE_ROLE=Crossplane-for-${CLUSTER_NAME}
+CROSSPLANE_ROLE="crossplane-for-${CLUSTER_NAME}"
 ROLE_TRUST_POLICY=$(mktemp)
 ROLE_PERMISSION_POLICY=$(mktemp)
+```
 
+You can then define the role's trust policy, in order to allow Crossplane AWS provider's
+service account to assume it as WebIdentity, and then create the role.
+
+```sh
 # prepare the trust policy document
 cat > ${ROLE_TRUST_POLICY} <<EOF
 {
@@ -81,7 +87,7 @@ cat > ${ROLE_TRUST_POLICY} <<EOF
         "Action": "sts:AssumeRoleWithWebIdentity",
         "Condition": {
             "StringLike": {
-                "${OIDC_ID}:sub": "system:serviceaccount:upbound-system:upbound-provider-aws-*"
+                "${OIDC_ID}:sub": "system:serviceaccount:upbound-system:provider-aws-*"
             }
         }
     }]
@@ -90,7 +96,12 @@ EOF
 
 # create the role with the proper trust policy
 aws iam create-role --role-name ${CROSSPLANE_ROLE} --assume-role-policy-document file://${ROLE_TRUST_POLICY}
+```
 
+Now, the permission policies, that define which permissions are granted to the role, have to be created and attached to the role.
+For this example you will need just one policy, with a number of statements declaring what the role can or cannot do.
+
+```sh
 # create the permission policy document
 cat > ${ROLE_PERMISSION_POLICY} <<EOF
 {
@@ -118,8 +129,7 @@ rm ${ROLE_PERMISSION_POLICY}
 
 ## Create Kubernetes resources
 
-Create a `ProviderConfig` resource to specify IRSA as authentication method
-and the role ARN that must be assumed:
+Create a `ProviderConfig` resource to specify IRSA as authentication method.
 
 ```sh
 kubectl apply -f - <<EOF
@@ -130,9 +140,33 @@ metadata:
 spec:
   credentials:
     source: IRSA
-    webIdentity:
-      roleARN: arn:aws:iam::${ACCOUNT_ID}:role/${CROSSPLANE_ROLE}
 EOF
+```
+
+Create a `ControllerConfig` resource to specify the AWS provider's settings,
+including the IRSA role to assume:
+
+```sh
+kubectl apply -f - <<EOF
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${ACCOUNT_ID}:role/${CROSSPLANE_ROLE}
+  name: aws-irsa
+EOF
+```
+
+and patch the AWS provider to use it:
+
+```sh
+kubectl patch providers.pkg.crossplane.io provider-aws --type='merge' --patch '{"spec": { "controllerConfigRef": { "name": "aws-irsa" } } }'
+```
+
+Destroy the existing pods to make sure that new ones will be created:
+
+```sh
+kubectl -n upbound-system delete pods -l pkg.crossplane.io/provider=provider-aws
 ```
 
 Now you can test the effectiveness of the configuration by creating a simple S3 bucket:
@@ -150,7 +184,7 @@ EOF
 )
 ```
 
-and verifying its status
+and verify its status
 
 ```sh hl_lines="1"
 $ kubectl get buckets.s3.aws.upbound.io ${BUCKET_NAME}
@@ -168,7 +202,7 @@ $ aws s3api list-buckets | jq '.Buckets[]|select(.Name == "'${BUCKET_NAME}'")'
 }
 ```
 
-This proves that the provider is configured correctly, you can now delete the test bucket:
+This proves that the provider is configured correctly and you can safely delete the test bucket:
 
 ```sh
 kubectl delete buckets.s3.aws.upbound.io ${BUCKET_NAME}
