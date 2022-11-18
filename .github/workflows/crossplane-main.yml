@@ -12,7 +12,9 @@ on:
     branches:
       - main
     paths:
-      - '*/crossplane/**'
+      - 'amazon/crossplane/**'
+      - 'azure/crossplane/**'
+      - 'google/crossplane/**'
 
 jobs:
   pre-publish:
