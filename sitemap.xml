@@ -2,52 +2,92 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/crossplane/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/crossplane/providers/aws/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/crossplane/providers/azure/</loc>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/packages/elasticache/ack/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/packages/elasticache/ack/manual/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/packages/elasticache/ack/package/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/packages/elasticache/ack/troubleshooting/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/prerequisites/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/prerequisites/ack/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/prerequisites/eks/</loc>
-         <lastmod>2022-11-10</lastmod>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/consume-instance/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/consume-package/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/produce-package/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/test-package/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/packages/mongodb/crossplane/troubleshooting/</loc>
+         <lastmod>2022-11-18</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/azure/prerequisites/</loc>
+         <lastmod>2022-11-18</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>
