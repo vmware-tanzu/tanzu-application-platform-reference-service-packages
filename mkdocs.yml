@@ -32,6 +32,7 @@ theme:
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: indigo
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -59,6 +60,7 @@ extra:
 # Extensions
 markdown_extensions:
   - abbr
+  - attr_list
   - footnotes
   - admonition
   - codehilite:
@@ -74,6 +76,9 @@ markdown_extensions:
   - pymdownx.caret
   - pymdownx.details
   - pymdownx.critic
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
   - pymdownx.inlinehilite
   - pymdownx.magiclink
   - pymdownx.mark
@@ -102,7 +107,16 @@ nav:
       - usecases/aws/prerequisites/index.md
       - usecases/aws/prerequisites/eks.md
       - usecases/aws/prerequisites/ack.md
+  - Azure:
+    - Packages:
+      - MongoDB with Crossplane:
+        - usecases/azure/packages/mongodb/crossplane/index.md
+        - usecases/azure/packages/mongodb/crossplane/consume-instance.md
+        - usecases/azure/packages/mongodb/crossplane/consume-package.md
+    - Prerequisites:
+      - usecases/azure/prerequisites/index.md
 - Crossplane:
   - crossplane/index.md
   - Providers:
     - crossplane/providers/aws.md
+    - crossplane/providers/azure.md
