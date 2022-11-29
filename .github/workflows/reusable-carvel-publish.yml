@@ -1,0 +1,65 @@
+name: Reusable workflow for publishing Carvel packages
+
+on:
+
+  workflow_call:
+
+    inputs:
+      package_version:
+        type: string
+        required: true
+      package_name:
+        type: string
+        required: true
+      package_provider:
+        type: string
+        required: true
+      run-test:
+        type: boolean
+        default: false
+      kubernetes-version:
+        type: string
+        default: v1.24.6
+      kind-version:
+        type: string
+        default: v0.16.0
+
+    outputs:
+      package_repository:
+        value: ${{ jobs.publish.outputs.package_repository }}
+      package_registry:
+        value: ${{ jobs.publish.outputs.package_registry }}
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+
+    outputs:
+      package_repository: ${{ env.PACKAGE_REPOSITORY }}
+      package_registry: ${{ env.PACKAGE_REGISTRY }}
+
+    env:
+      PACKAGE_VERSION: ${{ inputs.package_version }}
+      PACKAGE_REGISTRY: ghcr.io
+      PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/carvel/${{ inputs.package_name }}
+      PACKAGE_PROVIDER: ${{ inputs.package_provider }}
+      PACKAGE_NAME: ${{ inputs.package_name }}
+
+    steps:
+
+      - name: Dump info
+        run: |
+          env | sort
+
+  test:
+    if: inputs.run-test
+    uses: ./.github/workflows/reusable-carvel-test.yml
+    needs:
+      - publish
+    with:
+      package_version: ${{ inputs.package_version }}
+      package_name: ${{ inputs.package_name }}
+      package_provider: ${{ inputs.package_provider }}
+      package_registry: ${{ needs.publish.outputs.package_registry }}
+      package_repository: ${{ needs.publish.outputs.package_repository }}

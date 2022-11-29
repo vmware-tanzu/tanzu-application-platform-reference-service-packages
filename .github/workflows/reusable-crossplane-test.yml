@@ -1,0 +1,83 @@
+name: Reusable workflow for testing Crossplane packages
+
+
+on:
+
+  workflow_call:
+
+    inputs:
+      package_version:
+        type: string
+        required: true
+      package_name:
+        type: string
+        required: true
+      package_provider:
+        type: string
+        required: true
+      package_registry:
+        type: string
+        required: true
+      package_repository:
+        type: string
+        required: true
+      kubernetes-version:
+        type: string
+        default: v1.24.6
+      kind-version:
+        type: string
+        default: v0.16.0
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CROSSPLANE_NAMESPACE: upbound-system
+      CONFIG_VERSION: ${{ inputs.package_version }}
+      CONFIG_IMAGE: ${{ inputs.package_registry }}/${{ inputs.package_repository }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install UXP
+        run: |
+          curl -sL "https://cli.upbound.io" | sh
+          sudo mv up /usr/local/bin/
+          up --version
+
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.4.0
+        with:
+          verbosity: 5
+          version: ${{ inputs.kind-version }}
+          kubectl_version: ${{ inputs.kubernetes-version }}
+          node_image: kindest/node:${{ inputs.kubernetes-version }}
+
+      - name: Verify Cluster
+        run: |
+          kubectl version
+          which kubectl
+          kubectl cluster-info
+          kubectl get storageclass standard
+
+      - name: Create Azure Config Secret
+        if: inputs.package_provider == 'azure'
+        run: |
+          kubectl create namespace ${CROSSPLANE_NAMESPACE}
+          kubectl create secret generic azure-secret -n ${CROSSPLANE_NAMESPACE} --from-literal=creds='${{ secrets.AZURE_CONFIG }}'
+
+      - name: Test Crossplane package
+        run: |
+          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+        env:
+          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_name }}.sh
+
+      - name: Cleanup Crossplane package
+        if: always()
+        run: |
+          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+        env:
+          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_name }}/cleanup.sh

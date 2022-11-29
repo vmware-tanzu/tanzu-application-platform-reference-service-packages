@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 TEST_APP_NAME=$1
 
 echo ">> Waiting on Test Application: ${TEST_APP_NAME}"

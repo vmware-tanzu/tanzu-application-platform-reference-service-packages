@@ -1,4 +1,7 @@
+#!/usr/bin/env bash
+
 CLAIM_NAME=$1
+CROSSPLANE_NAMESPACE=${CROSSPLANE_NAMESPACE:-upbound-system}
 
 echo ">> Claiming a MongoDBInstance"
 cat <<EOF | kubectl apply -f -
@@ -32,14 +35,14 @@ kubectl apply -f https://raw.githubusercontent.com/joostvdg/spring-boot-mongo/ma
 kubectl get deployment
 
 echo ">> Showing Secrets (1)"
-kubectl get secret -n upbound-system
+kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret
 
 echo ">> Waiting for Managed Resources To Get Ready"
 kubectl wait --for=condition=ready mongodbinstances.azure.ref.services.apps.tanzu.vmware.com ${CLAIM_NAME} --timeout=400s
 
 echo ">> Showing Secrets (2)"
-kubectl get secret -n upbound-system
+kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret
 
 echo ">> Showing Comp and Claim status"

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 CLAIM_NAME=${CLAIM_NAME:-"trp-cosmosdb-mongo-08"}
 TEST_APP_NAME=${TEST_APP_NAME:-"spring-boot-mongo"}
 CONFIG_NAME=${CONFIG_NAME:-"trp-azure-mongodb"}

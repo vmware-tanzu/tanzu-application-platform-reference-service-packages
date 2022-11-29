@@ -1,0 +1,35 @@
+name: Reusable bump-version workflow
+
+on:
+
+  workflow_call:
+
+    outputs:
+      version:
+        value: ${{ jobs.bump-version.outputs.version }}
+        description: The new published version
+
+jobs:
+
+  bump-version:
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      version:  ${{ steps.bump.outputs.new_tag }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Bump version and push tag
+        id: bump
+        uses: anothrNick/github-tag-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          INITIAL_VERSION: 0.1.0
+          RELEASE_BRANCHES: main
+          PRERELEASE: true
+          DEFAULT_BUMP: patch

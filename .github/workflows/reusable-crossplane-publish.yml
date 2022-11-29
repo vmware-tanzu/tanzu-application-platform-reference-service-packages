@@ -1,18 +1,29 @@
-name: Reusable publish workflow
-
+name: Reusable workflow for publishing Crossplane packages
 
 on:
+
   workflow_call:
+
     inputs:
-      version:
+      package_version:
         type: string
         required: true
-      package:
+      package_name:
         type: string
         required: true
-      provider:
+      package_provider:
         type: string
         required: true
+      run-test:
+        type: boolean
+        default: false
+      kubernetes-version:
+        type: string
+        default: v1.24.6
+      kind-version:
+        type: string
+        default: v0.16.0
+
     outputs:
       package_repository:
         value: ${{ jobs.publish.outputs.package_repository }}
@@ -29,17 +40,17 @@ jobs:
       package_registry: ${{ env.PACKAGE_REGISTRY }}
 
     env:
-      PACKAGE_VERSION: ${{ inputs.version }}
+      PACKAGE_VERSION: ${{ inputs.package_version }}
       PACKAGE_REGISTRY: ghcr.io
-      PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.provider }}/crossplane/${{ inputs.package }}
-      PACKAGE_PROVIDER: ${{ inputs.provider }}
-      PACKAGE_NAME: ${{ inputs.package }}
+      PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/crossplane/${{ inputs.package_name }}
+      PACKAGE_PROVIDER: ${{ inputs.package_provider }}
+      PACKAGE_NAME: ${{ inputs.package_name }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ inputs.package_version }}
 
       - name: Install UXP
         run: |
@@ -66,5 +77,16 @@ jobs:
 
       - name: Crossplane Package Publish
         run: |
-          make crossplane-build
           make crossplane-push
+
+  test:
+    if: inputs.run-test
+    uses: ./.github/workflows/reusable-crossplane-test.yml
+    needs:
+      - publish
+    with:
+      package_version: ${{ inputs.package_version }}
+      package_name: ${{ inputs.package_name }}
+      package_provider: ${{ inputs.package_provider }}
+      package_registry: ${{ needs.publish.outputs.package_registry }}
+      package_repository: ${{ needs.publish.outputs.package_repository }}
