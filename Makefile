@@ -90,18 +90,18 @@ repo-package-copy: repo-prepare
 	cp -a ${PACKAGES_REPO_STAGING_DIR}/packages/$(shell yq e .metadata.name ${PACKAGE_DIR}/package-metadata.yml)/ ${REPOSITORY_CLOUD_DIR}/${PACKAGE_NAME}
 
 crossplane-ytt:
-	mkdir -p ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src/
-	ytt -f ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/ytt > ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src/crossplane.yml
+	mkdir -p ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src/
+	ytt -f ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/ytt > ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src/crossplane.yml
 
 crossplane-build: crossplane-ytt
-	mkdir -p ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package
-	rm ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/*.xpkg || true
+	mkdir -p ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package
+	rm ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/*.xpkg || true
 	up xpkg build \
-		--package-root ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src \
-		--examples-root ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/claim-examples \
-		--output ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/crossplane-${PACKAGE_NAME}.xpkg
+		--package-root ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/src \
+		--examples-root ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/claim-examples \
+		--output ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/crossplane-${PACKAGE_NAME}.xpkg
 
 crossplane-push: crossplane-build
-	up xpkg push --package ${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/crossplane-${PACKAGE_NAME}.xpkg \
+	up xpkg push --package ${PACKAGES_DIR}/${PACKAGE_PROVIDER}/crossplane/${PACKAGE_NAME}/package/crossplane-${PACKAGE_NAME}.xpkg \
 		${PACKAGE_REGISTRY}/${PACKAGE_REPOSITORY}:${PACKAGE_VERSION} \
 		--domain ${PACKAGE_REGISTRY}
