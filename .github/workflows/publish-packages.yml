@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - gha-carvel
     paths:
       - 'packages/*/*/*/**'
 
@@ -22,6 +23,8 @@ jobs:
 
   list-packages:
     uses: ./.github/workflows/reusable-list-packages.yml
+    with:
+      basedir: packages
 
   bump-version:
     needs:
@@ -41,6 +44,8 @@ jobs:
       package_name: ${{ matrix.name }}
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
       run-test: ${{ github.event_name == 'pull_request' }}
 
   carvel-publish:
@@ -55,4 +60,98 @@ jobs:
       package_name: ${{ matrix.name }}
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
-      run-test: ${{ github.event_name == 'pull_request' }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
+
+  carvel-prepare-repo:
+    needs:
+      - bump-version
+      - list-packages
+      - carvel-publish
+    runs-on: ubuntu-latest
+
+    outputs:
+      repo-branch-name: ${{ steps.git.outputs.REPO_BRANCH_NAME }}
+
+    env:
+      PACKAGE_VERSION: ${{ needs.bump-version.outputs.version }}
+      REPO_BRANCH_NAME: carvel-repo-${{ needs.bump-version.outputs.version }}
+
+    steps:
+      
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Prepare git client
+        id: git
+        run: |
+          git config --global user.email "${{ github.event.repository.name }}@${{ github.repository_owner }}.github.io"
+          git config --global user.name "GitHub Actions Workflow"
+
+          sleep 5 && git fetch --all
+
+          echo "CURRENT_BRANCH=$(git branch --show-current)" >> $GITHUB_ENV
+          echo "REPO_BRANCH_NAME=$REPO_BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create branch and pull request
+        run: |
+          # create new branch
+          git checkout -b ${REPO_BRANCH_NAME}
+
+          # include the changes from all the packages' branches
+          # and remove them at the end of the script
+          BRANCHES=
+          for PACKAGE_DIR in $(jq -r '.include[]|.path' <<<$PACKAGES_LIST); do
+            PACKAGE_METADATA_NAME=$(yq e '.metadata.name' ${PACKAGES_BASEDIR}/${PACKAGE_DIR}/package-metadata.yml)
+            PACKAGE_BRANCH="${PACKAGE_METADATA_NAME}/${PACKAGE_VERSION}"
+            BRANCHES="${BRANCHES} ${PACKAGE_BRANCH}"
+            git rebase origin/${PACKAGE_BRANCH}
+          done
+          trap "git push --delete origin ${BRANCHES}" EXIT
+
+          # prepare a proper commit message
+          COMMIT_MESSAGE="$(git log --pretty=format:'%s' ${CURRENT_BRANCH}..HEAD)"
+
+          # discard the existing commits from packages' branches but do keep the changed files
+          git reset --soft ${CURRENT_BRANCH}
+
+          # create a new commit on the repo branch and push it to origin
+          git add . && git commit -m "${COMMIT_MESSAGE}" && git push -u origin ${REPO_BRANCH_NAME}
+
+          # create the pull request against CURRENT_BRANCH
+          gh pr create --base ${CURRENT_BRANCH} --title "Carvel repository release at commit ${{ github.sha }}" --body "${COMMIT_MESSAGE}"
+        env:
+          PACKAGES_BASEDIR: ${{ needs.list-packages.outputs.basedir }}
+          PACKAGES_LIST: ${{ needs.list-packages.outputs.carvel }}
+          GH_TOKEN: ${{ github.token }}
+
+  carvel-repo-publish:
+    if: needs.list-packages.outputs.carvel_publish == 'true'
+    uses: ./.github/workflows/reusable-carvel-repo-publish.yml
+    needs:
+      - bump-version
+      - carvel-prepare-repo
+    with:
+      git_ref: ${{ needs.carvel-prepare-repo.outputs.repo-branch-name }}
+      repo_version: ${{ needs.bump-version.outputs.version }}
+      release: true
+
+  carvel-test:
+    if: needs.list-packages.outputs.carvel_publish == 'true'
+    uses: ./.github/workflows/reusable-carvel-test.yml
+    needs:
+      - list-packages
+      - bump-version
+      - carvel-repo-publish
+    strategy:
+      matrix: ${{ fromJson(needs.list-packages.outputs.carvel) }}
+    with:
+      repo_version: ${{ needs.bump-version.outputs.version }}
+      package_name: ${{ matrix.name }}
+      package_provider: ${{ matrix.provider }}
+      package_version: ${{ needs.bump-version.outputs.version }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
+    secrets: inherit

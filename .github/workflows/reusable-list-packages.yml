@@ -15,6 +15,8 @@ on:
         default: HEAD~1
 
     outputs:
+      basedir:
+        value: ${{ inputs.basedir }}
       all:
         value: ${{ jobs.list-packages.outputs.all }}
       crossplane:
@@ -56,7 +58,8 @@ jobs:
       # that have been either Added, Copied, Modified or Renamed (ACMR).
       # This list is fed to `jq` that transforms it into an actual json array, filters by the entries that start with "BASEDIR/"
       # and strip the prefix.
-      # Each entry is then tokenised by /, morphed into an object with "provider" key set as the first token, "packaging" as the second one and "name" as the third one.
+      # Each entry is then tokenised by /, morphed into an object with "provider" key set as the first token, "packaging" as the second one, "name" as the third one
+      # and the "path" as them all back together.
       # The resulting array is then purged of the duplicates and then set as value for the "include" key in a new object,
       # in order to meet https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs#expanding-or-adding-matrix-configurations.
       # The result is appended to GITHUB_OUTPUT as well as written to the workflow's output for debugging purposes (thus the `tee -a`).
@@ -67,7 +70,7 @@ jobs:
             [inputs]
             | map(capture("^"+$BASEDIR+"/(?<p>.*)$").p
               | split("/")
-              | { "provider": .[0], "packaging": .[1], "name": .[2] }
+              | { "path": .[0:3]|join("/"), "provider": .[0], "packaging": .[1], "name": .[2] }
             )
             | map(select(.provider!=null and .packaging!=null and .name!=null))
             | unique

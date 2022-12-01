@@ -5,6 +5,13 @@ on:
   workflow_call:
 
     inputs:
+      packages_basedir:
+        type: string
+        description: Packages base directory path
+        default: packages
+      package_path:
+        type: string
+        required: true
       package_version:
         type: string
         required: true
@@ -14,21 +21,38 @@ on:
       package_provider:
         type: string
         required: true
-      run-test:
-        type: boolean
-        default: false
+      repo_dir:
+        type: string
+        description: Directory path to hold the contents of the Carvel repository
+        default: repository
       kubernetes-version:
         type: string
         default: v1.24.6
       kind-version:
         type: string
         default: v0.16.0
+      kctrl-version:
+        type: string
+        default: v0.43.2
 
     outputs:
       package_repository:
         value: ${{ jobs.publish.outputs.package_repository }}
       package_registry:
         value: ${{ jobs.publish.outputs.package_registry }}
+      package_metadata_name:
+        value: ${{ jobs.publish.outputs.package_metadata_name }}
+
+env:
+  PACKAGE_VERSION: ${{ inputs.package_version }}
+  PACKAGE_REGISTRY: ghcr.io
+  PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/carvel/${{ inputs.package_name }}
+  PACKAGE_PROVIDER: ${{ inputs.package_provider }}
+  PACKAGE_NAME: ${{ inputs.package_name }}
+  PACKAGES_BASEDIR: ${{ inputs.packages_basedir }}
+  PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
+
+  CARVEL_REPO_DIR: ${{ inputs.repo_dir }}
 
 jobs:
 
@@ -38,28 +62,48 @@ jobs:
     outputs:
       package_repository: ${{ env.PACKAGE_REPOSITORY }}
       package_registry: ${{ env.PACKAGE_REGISTRY }}
-
-    env:
-      PACKAGE_VERSION: ${{ inputs.package_version }}
-      PACKAGE_REGISTRY: ghcr.io
-      PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/carvel/${{ inputs.package_name }}
-      PACKAGE_PROVIDER: ${{ inputs.package_provider }}
-      PACKAGE_NAME: ${{ inputs.package_name }}
+      package_metadata_name: ${{ steps.info.outputs.package_metadata_name }}
 
     steps:
 
-      - name: Dump info
-        run: |
-          env | sort
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
 
-  test:
-    if: inputs.run-test
-    uses: ./.github/workflows/reusable-carvel-test.yml
-    needs:
-      - publish
-    with:
-      package_version: ${{ inputs.package_version }}
-      package_name: ${{ inputs.package_name }}
-      package_provider: ${{ inputs.package_provider }}
-      package_registry: ${{ needs.publish.outputs.package_registry }}
-      package_repository: ${{ needs.publish.outputs.package_repository }}
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          kctrl: ${{ inputs.kctrl-version }}
+
+      - name: Kctrl Release
+        run: make kctrl-release
+        env:
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.PACKAGE_REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: ${{ github.actor }}
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get package info
+        id: info
+        run: |
+          package_metadata_name=$(yq e '.metadata.name' ${PACKAGE_DIR}/package-metadata.yml)
+          echo "package_metadata_name=${package_metadata_name}" >> $GITHUB_OUTPUT
+
+      # The files for the repository have been generated into ${CARVEL_REPO_DIR}/packages
+      # They will be added to a dedicated branch
+      - name: Push artifacts
+        run: |
+          CURRENT_BRANCH=$(git branch --show-current)
+          ARTIFACTS_BRANCH_NAME=${PACKAGE_METADATA_NAME}/${PACKAGE_VERSION}
+          ARTIFACTS_DIR=${CARVEL_REPO_DIR}/packages/${PACKAGE_METADATA_NAME}
+
+          git config --global user.email "${{ github.event.repository.name }}@${{ github.repository_owner }}.github.io"
+          git config --global user.name "GitHub Actions Workflow"
+
+          git checkout -b ${ARTIFACTS_BRANCH_NAME}
+          git add ${ARTIFACTS_DIR}
+          git commit -m "${ARTIFACTS_BRANCH_NAME}"
+          git push -u origin ${ARTIFACTS_BRANCH_NAME}
+        env:
+          PACKAGE_METADATA_NAME: ${{ steps.info.outputs.package_metadata_name }}

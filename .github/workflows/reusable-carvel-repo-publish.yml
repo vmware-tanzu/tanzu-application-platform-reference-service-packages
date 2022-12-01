@@ -1,0 +1,78 @@
+name: Reusable workflow for publishing Carvel packages repository
+
+on:
+
+  workflow_call:
+
+    inputs:
+      repo_dir:
+        type: string
+        default: repository
+      release:
+        type: boolean
+        default: false
+      repo_name:
+        type: string
+        default: carvel-reference-packages
+      repo_version:
+        type: string
+      git_ref:
+        type: string
+        default: ${{ github.ref }}
+        description: Git ref to checkout (defaults to github.ref)
+      kctrl-version:
+        type: string
+        default: v0.43.2
+
+    outputs:
+      registry:
+        value: ${{ jobs.publish.outputs.registry }}
+      repository:
+        value: ${{ jobs.publish.outputs.repository }}
+
+env:
+  CARVEL_REPO_DIR: ${{ inputs.repo_dir }}
+  CARVEL_REPO_NAME: ${{ inputs.repo_name }}
+  CARVEL_REPO_REGISTRY: ghcr.io
+  CARVEL_REPO_REPOSITORY: ${{ github.repository }}/${{ inputs.repo_name }}
+  CARVEL_REPO_VERSION: ${{ inputs.repo_version }}
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+
+    outputs:
+      registry: ${{ env.CARVEL_REPO_REGISTRY }}
+      repository: ${{ env.CARVEL_REPO_REPOSITORY }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.git_ref }}
+
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          kctrl: ${{ inputs.kctrl-version }}
+
+      - name: Kctrl Release
+        id: kctrl
+        run: |
+          make kctrl-repo-release
+        env:
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.CARVEL_REPO_REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: ${{ github.actor }}
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        if: inputs.release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.CARVEL_REPO_VERSION }}
+          fail_on_unmatched_files: true
+          files: |
+            repository/package-repository.yml

@@ -1,3 +1,7 @@
 # Except this file
 !.gitignore
+
 /site/
+**/.src/
+**/.package/
+pkgrepo-build.yml

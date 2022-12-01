@@ -4,6 +4,11 @@ on:
 
   workflow_call:
 
+    inputs:
+      default_bump:
+        type: string
+        default: patch
+
     outputs:
       version:
         value: ${{ jobs.bump-version.outputs.version }}
@@ -32,4 +37,4 @@ jobs:
           INITIAL_VERSION: 0.1.0
           RELEASE_BRANCHES: main
           PRERELEASE: true
-          DEFAULT_BUMP: patch
+          DEFAULT_BUMP: ${{ inputs.default_bump }}

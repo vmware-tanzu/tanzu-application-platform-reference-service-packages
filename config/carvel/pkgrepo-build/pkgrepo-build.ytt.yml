@@ -1,0 +1,10 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: kctrl.carvel.dev/v1alpha1
+kind: PackageRepositoryBuild
+metadata:
+  name: #@ data.values.name
+spec:
+  export:
+    imgpkgBundle:
+      image: #@ data.values.registry + "/" + data.values.repository

@@ -5,6 +5,9 @@ on:
   workflow_call:
 
     inputs:
+      repo_version:
+        type: string
+        required: true
       package_version:
         type: string
         required: true
@@ -14,10 +17,11 @@ on:
       package_provider:
         type: string
         required: true
-      package_registry:
+      packages_basedir:
         type: string
-        required: true
-      package_repository:
+        description: Packages base directory path
+        default: packages
+      package_path:
         type: string
         required: true
       kubernetes-version:
@@ -26,21 +30,31 @@ on:
       kind-version:
         type: string
         default: v0.16.0
+      kapp-controller-version:
+        type: string
+        default: v0.43.2
+      secretgen-controller-version:
+        type: string
+        default: v0.12.0
+
+    secrets:
+      AZURE_CONFIG:
+        required: false
 
 jobs:
 
   test:
     runs-on: ubuntu-latest
+
     env:
-      CROSSPLANE_NAMESPACE: upbound-system
-      CONFIG_VERSION: ${{ inputs.package_version }}
-      CONFIG_IMAGE: ${{ inputs.package_registry }}/${{ inputs.package_repository }}
+      PACKAGE_VERSION: ${{ inputs.package_version }}
 
     steps:
 
-      - name: Dump info
-        run: |
-          env | sort
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1.4.0
@@ -57,21 +71,82 @@ jobs:
           kubectl cluster-info
           kubectl get storageclass standard
 
-      - name: Create Azure Config Secret
+      - name: Install kapp-controller
+        run: |
+          MANIFEST="https://github.com/vmware-tanzu/carvel-kapp-controller/releases/download/${{ inputs.kapp-controller-version }}/release.yml"
+          if [[ "${{ inputs.kapp-controller-version }}" == "latest" ]]; then
+            MANIFEST="https://github.com/vmware-tanzu/carvel-kapp-controller/releases/latest/download/release.yml"
+          fi
+
+          kubectl apply -f ${MANIFEST}
+          time kubectl wait --for=condition=Available=True -n kapp-controller deploy kapp-controller
+          time kubectl wait --for=condition=Available=True apiservices.apiregistration.k8s.io v1alpha1.data.packaging.carvel.dev
+
+          # determine the kapp-controller global namespace
+          echo KAPP_GLOBAL_NAMESPACE=$(kubectl -n kapp-controller get deployment kapp-controller -o json | jq -r '.spec.template.spec.containers[]|select(.name=="kapp-controller").args[]|select(.|startswith("-packaging-global-namespace"))|split("=")[1]') >> $GITHUB_ENV
+
+      - name: Install secretgen-controller
+        run: |
+          MANIFEST="https://github.com/vmware-tanzu/carvel-secretgen-controller/releases/download/${{ inputs.secretgen-controller-version }}/release.yml"
+          if [[ "${{ inputs.secretgen-controller-version }}" == "latest" ]]; then
+            MANIFEST="https://github.com/vmware-tanzu/carvel-secretgen-controller/releases/latest/download/release.yml"
+          fi
+
+          kubectl apply -f ${MANIFEST}
+          time kubectl wait --for=condition=Available=True -n secretgen-controller deploy secretgen-controller
+          time kubectl wait --for=condition=Available=True apiservices.apiregistration.k8s.io v1alpha1.secretgen.carvel.dev
+
+      - name: Install Carvel repository
+        run: |
+          REPO_MANIFEST="https://github.com/${{ github.repository }}/releases/download/${{ inputs.repo_version }}/package-repository.yml"
+          REPO_MANIFEST_FILE=$(mktemp)
+          curl -sSfL -o ${REPO_MANIFEST_FILE} ${REPO_MANIFEST}
+          REPO_NAME=$(yq '.metadata.name' ${REPO_MANIFEST_FILE})
+          kubectl apply -n ${KAPP_GLOBAL_NAMESPACE} -f ${REPO_MANIFEST_FILE}
+          time kubectl wait --for=condition=ReconcileSucceeded=True packagerepositories.packaging.carvel.dev -n ${KAPP_GLOBAL_NAMESPACE} ${REPO_NAME}
+
+      - name: List available packages
+        run: |
+          kubectl get packages.data.packaging.carvel.dev
+
+      - name: Mask secret
         if: inputs.package_provider == 'azure'
-        run: |
-          kubectl create namespace ${CROSSPLANE_NAMESPACE}
-          kubectl create secret generic azure-secret -n ${CROSSPLANE_NAMESPACE} --from-literal=creds='${{ secrets.AZURE_CONFIG }}'
+        uses: matteo-magni/secret-mask-action@main
+        with:
+          secret: ${{ secrets.AZURE_CONFIG }}
 
-      - name: Test Carvel Package
-        run: |
-          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+      - name: Set Azure secret
+        if: inputs.package_provider == 'azure'
         env:
-          SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_name }}.sh
+          AZURE_CONFIG: ${{ secrets.AZURE_CONFIG }}
+        run: |
+          # transforms the keys in the input JSON secret from camelCase to UPPER_SNAKE_CASE
+          # with the AZURE_ prefix
+          # in order not to divert from the official ASO docs and the client JSON file generated by az CLI
+          for k in $(jq -r 'keys[]' <<<"$AZURE_CONFIG"); do
+            K=$(echo azure_$k | sed -r 's/([a-z0-9])([A-Z])/\1_\L\2/g' | tr '[:lower:]' '[:upper:]')
+            echo $K=$(jq -r '.'$k <<<"$AZURE_CONFIG") >> $GITHUB_ENV
+          done
 
-      - name: Cleanup Carvel Package
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Test Carvel package
+        run: |
+          export PACKAGE_METADATA_NAME=$(yq e '.metadata.name' ${PACKAGE_DIR}/package-metadata.yml)
+          echo PACKAGE_METADATA_NAME=${PACKAGE_METADATA_NAME} >> $GITHUB_ENV
+          if [ -x ${SCRIPT} ]; then
+            ${SCRIPT}
+          fi
+        env:
+          SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}.sh
+          PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
+
+      - name: Cleanup Carvel package
         if: always()
         run: |
-          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+          if [ -x ${SCRIPT} ]; then
+            ${SCRIPT}
+          fi
         env:
-          SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_name }}/cleanup.sh
+          SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}/cleanup.sh

@@ -1,0 +1,17 @@
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: PackageMetadata
+metadata:
+  name: elasticache.aws.ref.services.apps.tanzu.vmware.com
+spec:
+  categories:
+  - services
+  displayName: AWS Elasticache instances
+  longDescription: |
+    Helps you install an AWS Elasticache for Redis using ACK (https://github.com/aws-controllers-k8s/elasticache-controller).
+    You can follow the guide at https://vmware-tanzu.github.io/tanzu-application-platform-reference-service-packages/usecases/aws/prerequisites/ack/
+    to quickly find relevant information about how to install and configure ACK for Elasticache.
+  maintainers:
+  - name: The TAP Reference Packages Team
+  providerName: VMware
+  shortDescription: AWS Elasticache with ACK controller
+  supportDescription: Not supported - provided as reference package only
