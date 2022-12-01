@@ -20,8 +20,25 @@ on:
 
 jobs:
 
+  parameters:
+    runs-on: ubuntu-latest
+
+    outputs:
+      packages_basedir: ${{ steps.params.outputs.packages_basedir}}
+
+    steps:
+
+      - name: Set parameters
+        id: params
+        run: |
+          echo "packages_basedir=${PACKAGES_BASEDIR}" >> $GITHUB_OUTPUT
+
   list-packages:
+    needs:
+      - parameters
     uses: ./.github/workflows/reusable-list-packages.yml
+    with:
+      basedir: ${{ needs.parameters.outputs.packages_basedir }}
 
   bump-version:
     needs:
@@ -31,6 +48,7 @@ jobs:
 
   crossplane-publish:
     needs:
+      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.crossplane_publish == 'true'
@@ -42,9 +60,11 @@ jobs:
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
       run-test: ${{ github.event_name == 'pull_request' }}
+      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
 
   carvel-publish:
     needs:
+      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.carvel_publish == 'true'
@@ -56,3 +76,4 @@ jobs:
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
       run-test: ${{ github.event_name == 'pull_request' }}
+      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
