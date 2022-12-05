@@ -74,6 +74,11 @@ spec:
     - type: FromCompositeFieldPath
       fromFieldPath: metadata.uid
       toFieldPath: spec.writeConnectionSecretToRef.name
+      transforms:
+        - type: string
+          string:
+            type: Format
+            fmt: '%s-postgresql-admin'
     - type: FromCompositeFieldPath
       fromFieldPath: metadata.uid
       toFieldPath: spec.providerConfigRef.name
