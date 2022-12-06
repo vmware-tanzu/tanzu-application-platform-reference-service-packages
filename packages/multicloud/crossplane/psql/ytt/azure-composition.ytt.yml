@@ -161,8 +161,6 @@ spec:
       value: postgres
     - name: username
       fromFieldPath: spec.forProvider.administratorLogin
-    - name: password
-      fromConnectionSecretKey: "attribute.administrator_password"
     - name: host
       fromFieldPath: status.atProvider.fqdn
     - name: port

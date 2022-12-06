@@ -124,7 +124,7 @@ spec:
       toFieldPath: spec.forProvider.location
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.version
-      toFieldPath: spec.forProvider.values.image.tag
+      toFieldPath: spec.forProvider.version
       transforms:
       - type: map
         map:
@@ -138,7 +138,7 @@ spec:
       toFieldPath: spec.writeConnectionSecretToRef.name
       transforms:
       - string:
-          fmt: '%s-postgresql'
+          fmt: '%s-postgresql-admin'
           type: Format
         type: string
     - type: FromCompositeFieldPath
@@ -146,7 +146,7 @@ spec:
       toFieldPath: spec.forProvider.administratorPasswordSecretRef.name
       transforms:
       - string:
-          fmt: '%s-postgresql'
+          fmt: '%s-postgresql-admin'
           type: Format
         type: string
     connectionDetails:
@@ -158,8 +158,6 @@ spec:
       value: postgres
     - name: username
       fromFieldPath: spec.forProvider.administratorLogin
-    - name: password
-      fromConnectionSecretKey: attribute.administrator_password
     - name: host
       fromFieldPath: status.atProvider.fqdn
     - name: port
