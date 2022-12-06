@@ -57,10 +57,8 @@ spec:
                     properties:
                       startIpAddress:
                         type: string
-                        default: "0.0.0.0/0"
                       endIpAddress:
                         type: string
-                        default: "0.0.0.0/0"
                 required:
                 - location
             required:
