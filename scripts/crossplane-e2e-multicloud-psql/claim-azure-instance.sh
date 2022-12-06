@@ -22,20 +22,19 @@ spec:
     database: demo
     collation: en_GB.utf8
     storageClass: ${STORAGE_CLASS}
+    firewallRule:
+      startIpAddress: "0.0.0.0"
+      endIpAddress: "255.255.255.255"
 EOF
 
 kubectl get providerconfig,xpostgresqlinstances,postgresqlinstances
-
-echo ">> Installing Test Application"
-kubectl apply -f https://raw.githubusercontent.com/joostvdg/spring-boot-postgres/main/kubernetes/deployment.yaml
-kubectl get deployment
 
 echo ">> Showing Secrets (1)"
 kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret
 
 echo ">> Waiting for Managed Resources To Get Ready"
-kubectl wait --for=condition=ready postgresqlinstances.multi.ref.services.apps.tanzu.vmware.com/${CLAIM_NAME} --timeout=400s
+kubectl wait --for=condition=ready postgresqlinstances.multi.ref.services.apps.tanzu.vmware.com/${CLAIM_NAME} --timeout=600s
 # We can also wait on the "release"
 
 echo ">> Showing Secrets (2)"

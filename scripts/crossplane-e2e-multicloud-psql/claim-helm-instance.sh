@@ -27,10 +27,6 @@ EOF
 
 kubectl get providerconfig,xpostgresqlinstances,postgresqlinstances
 
-echo ">> Installing Test Application"
-kubectl apply -f https://raw.githubusercontent.com/joostvdg/spring-boot-postgres/main/kubernetes/deployment.yaml
-kubectl get deployment
-
 echo ">> Showing Secrets (1)"
 kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret

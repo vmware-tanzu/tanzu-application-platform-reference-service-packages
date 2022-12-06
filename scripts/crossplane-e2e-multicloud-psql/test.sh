@@ -2,9 +2,17 @@
 
 TEST_APP_NAME=$1
 
+echo ">> Installing Test Application"
+kubectl apply -f https://raw.githubusercontent.com/joostvdg/spring-boot-postgres/main/kubernetes/deployment.yaml
+kubectl get deployment
+
+
 echo ">> Waiting on Test Application: ${TEST_APP_NAME}"
 kubectl get pod 
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=${TEST_APP_NAME} --timeout=60s
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=${TEST_APP_NAME} --timeout=300s
+
+kubectl describe pod -l app.kubernetes.io/name=${TEST_APP_NAME} 
+sleep 10
 
 echo ">> Starting Port Forward"
 kubectl port-forward deployment/${TEST_APP_NAME} 8080 &
