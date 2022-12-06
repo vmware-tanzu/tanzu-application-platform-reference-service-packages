@@ -18,13 +18,14 @@ pushd $(dirname $0)
 
 # TODO use this when we also have the Azure version
 # Requires AZURE_CONFIG to contain an Azure API credential config (JSON format)
-# ./crossplane-azure-provider-create-secret.sh ${AZURE_CREDS_SECRET_NAME} "${AZURE_CONFIG}"
+./crossplane-azure-provider-create-secret.sh ${AZURE_CREDS_SECRET_NAME} "${AZURE_CONFIG}"
 
 ./crossplane-install-uxp.sh ${UXP_VERSION}
 
 
 echo "> Installing required providers"
 
+./crossplane-e2e-install-azure-provider.sh ${AZURE_CREDS_SECRET_NAME} ${CROSSPLANE_NAMESPACE} 
 ./crossplane-e2e-install-helm-provider.sh
 ./crossplane-e2e-install-k8s-provider.sh
 ./crossplane-e2e-install-tf-provider.sh

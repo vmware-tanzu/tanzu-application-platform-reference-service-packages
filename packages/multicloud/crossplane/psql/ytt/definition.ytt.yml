@@ -33,9 +33,6 @@ spec:
                 properties:
                   location:
                     type: string
-                  #! providerConfig:
-                  #!   type: string
-                  #!   default: default
                   version:
                     type: string
                     default: "13"
@@ -55,6 +52,15 @@ spec:
                   charset:
                     type: string
                     default: utf8
+                  firewallRule:
+                    type: object
+                    properties:
+                      startIpAddress:
+                        type: string
+                        default: "0.0.0.0/0"
+                      endIpAddress:
+                        type: string
+                        default: "0.0.0.0/0"
                 required:
                 - location
             required:

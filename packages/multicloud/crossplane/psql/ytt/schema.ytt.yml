@@ -15,11 +15,11 @@ configurationName: "multicloud-psql"
 cloudServiceBindingType: "postgresql"
 
 providers:
-#!  azure:
-#!    name: azure
-#!    image: xpkg.upbound.io/upbound/provider-azure
-#!    version: ">=v0.18.1"
-#!    configRef: default
+  azure:
+    name: azure
+    image: xpkg.upbound.io/upbound/provider-azure
+    version: ">=v0.18.1"
+    configRef: default
 
   helm:
     name: helm
