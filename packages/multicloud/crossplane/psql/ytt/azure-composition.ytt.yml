@@ -106,7 +106,7 @@ spec:
       kind: FlexibleServer
       spec:
         providerConfigRef:
-          name: #@ data.values.provider.configRef
+          name: #@ data.values.providers.azure.configRef
         forProvider:
           resourceGroupNameSelector:
             matchControllerRef: true
@@ -119,13 +119,15 @@ spec:
             namespace: #@ data.values.crossplane.namespace
           location: ""
           version: "" #! 11,12 and 13 are supported
+        writeConnectionSecretToRef:
+          namespace: #@ data.values.crossplane.namespace
     patches:
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.location
       toFieldPath: spec.forProvider.location
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.version
-      toFieldPath: spec.forProvider.values.image.tag
+      toFieldPath: spec.forProvider.version
       transforms:
       - type: map
         map:
@@ -139,7 +141,7 @@ spec:
       toFieldPath: spec.writeConnectionSecretToRef.name
       transforms:
       - string:
-          fmt: '%s-postgresql'
+          fmt: '%s-postgresql-admin'
           type: Format
         type: string
     - type: FromCompositeFieldPath
@@ -147,7 +149,7 @@ spec:
       toFieldPath: spec.forProvider.administratorPasswordSecretRef.name
       transforms:
       - string:
-          fmt: '%s-postgresql'
+          fmt: '%s-postgresql-admin'
           type: Format
         type: string
     connectionDetails:
@@ -172,19 +174,19 @@ spec:
       kind: FlexibleServerConfiguration
       spec:
         providerConfigRef:
-          name: #@ data.values.provider.configRef
+          name: #@ data.values.providers.azure.configRef
         forProvider:
           serverIdSelector:
             matchControllerRef: true
           name: backslash_quote
-          value: on  
+          value: "on"
   - name: flexibleserverdatabase
     base:
       apiVersion: dbforpostgresql.azure.upbound.io/v1beta1
       kind: FlexibleServerDatabase
       spec:
         providerConfigRef:
-          name: #@ data.values.provider.configRef
+          name: #@ data.values.providers.azure.configRef
         forProvider:
           serverIdSelector:
             matchControllerRef: true
@@ -203,7 +205,7 @@ spec:
       kind: FlexibleServerFirewallRule
       spec:
         providerConfigRef:
-          name: #@ data.values.provider.configRef
+          name: #@ data.values.providers.azure.configRef
         forProvider:
           serverIdSelector:
             matchControllerRef: true
