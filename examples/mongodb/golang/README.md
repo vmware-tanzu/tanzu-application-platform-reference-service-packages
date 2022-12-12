@@ -88,30 +88,6 @@ Then install Redis:
 helm install mongodb bitnami/mongodb
 ```
 
-```text
-** Please be patient while the chart is being deployed **
-
-MongoDB&reg; can be accessed on the following DNS name(s) and ports from within your cluster:
-
-    mongodb.mongo-app.svc.cluster.local
-
-To get the root password run:
-
-    export MONGODB_ROOT_PASSWORD=$(kubectl get secret --namespace mongo-app mongodb -o jsonpath="{.data.mongodb-root-password}" | base64 -d)
-
-To connect to your database, create a MongoDB&reg; client container:
-
-    kubectl run --namespace mongo-app mongodb-client --rm --tty -i --restart='Never' --env="MONGODB_ROOT_PASSWORD=$MONGODB_ROOT_PASSWORD" --image docker.io/bitnami/mongodb:6.0.3-debian-11-r0 --command -- bash
-
-Then, run the following command:
-    mongosh admin --host "mongodb" --authenticationDatabase admin -u root -p $MONGODB_ROOT_PASSWORD
-
-To connect to your database from outside the cluster execute the following commands:
-
-    kubectl port-forward --namespace mongo-app svc/mongodb 27017:27017 &
-    mongosh --host 127.0.0.1 --authenticationDatabase admin -p $MONGODB_ROOT_PASSWORD
-```
-
 MongoDB can be accessed on the following DNS names from within your cluster:
 
 * `mongodb.mongo-app.svc.cluster.local`
@@ -362,204 +338,19 @@ curl -sL -X POST -d '{"Title": "Hello world", "Author":"bzhtux"}' http://127.0.0
   "message": "Book Hello world already exists.",
   "status": "Conflict"
 }
-```
-
-## Kapp and Kapp-controller
-
-### Deploy kapp
-
-```shell
-kapp deploy -a kc -f https://github.com/vmware-tanzu/carvel-kapp-controller/releases/download/v0.42.0/release.yml -y
-```
-
-### Create a carvel package for the App
-
-Create a `config.yml` file like this:
-
-```yaml
-cat > config.yml << EOF
-#@ load("@ytt:data", "data")
-#@ load("@ytt:base64", "base64")
-
-#@ def labels():
-go-mongo: ""
-app: #@ data.values.app.name
-app.kubernetes.io/name: #@ data.values.app.name
-#@ end
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: #@ data.values.app.name
-spec:
-  strategy:
-    type: RollingUpdate
-  selector:
-    matchLabels: #@ labels()
-  template:
-    metadata:
-      labels: #@ labels()
-    spec:
-      containers:
-      - name: #@ data.values.app.name
-        image: ghcr.io/bzhtux/sample_apps-mongo:v0.0.7
-        imagePullPolicy: Always
-        volumeMounts:
-        - name: services-bindings
-          mountPath: "/bindings"
-          readOnly: true
-        env:
-          - name: SERVICE_BINDING_ROOT
-            value: "/bindings"
-      volumes:
-      - name: services-bindings
-        projected:
-          sources:
-          - secret:
-              name: #@ data.values.app.name
-              items:
-                #@ for/end i in data.values.service.secret:
-                - key: #@ i
-                  path: #@ data.values.service.secret.type+"/" + i
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: #@ data.values.app.name
-spec:
-  ingressClassName: contour
-  rules:
-    - host: #@ data.values.app.name + ".bzhtux-lab.net"
-      http:
-        paths:
-          - backend:
-              service:
-                name: #@ data.values.app.name
-                port:
-                  number: #@ data.values.app.port
-            pathType: Prefix
-            path: /
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: #@ data.values.app.name
-data:
-  host: #@ base64.encode(data.values.service.name + "-svc." + data.values.service.namespace + ".svc.cluster.local")
-  port: #@ base64.encode(str(data.values.service.secret.port))
-  username: #@ base64.encode(data.values.service.secret.username)
-  password: #@ base64.encode(data.values.service.secret.password)
-  database: #@ base64.encode(data.values.service.secret.database)
-  uri: #@ base64.encode(data.values.service.secret.username + ":" + data.values.service.secret.password + "@" + data.values.service.name + "-svc." + data.values.service.namespace + ".svc.cluster.local" + ":" + str(data.values.service.secret.port))
-  type: #@ base64.encode(data.values.service.secret.type)
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: #@ data.values.app.name
-spec:
-  ports:
-  - name: #@ data.values.app.name
-    port: #@ data.values.app.port
-    targetPort: #@ data.values.app.port
-  selector: #@ labels()
-EOF
-```
-
-And now the `values.yml` to let `ytt` to replace the template placeholders with values:
-
-```yaml
-#@data/values
----
-namespace: "mongo-demo"
-app:
-  name: "go-mongo"
-  port: 8080
-  service:
-    name: "mongo-svc"
-    port: 8080
-service:
-  name: "mongo-mongodb"
-  namespace: "mongo-demo"
-  secret:
-    host: "mongo-mongodb.mongo-demo.svc.cluster.local"
-    port: 27017
-    username: "root"
-    password: "AcY2CdZV7p"
-    database: "gomongo"
-    uri: "mongodb://"
-    type: "mongodb"
-```
-
-Once we have the configuration figured out, let’s use kbld to record which container images are used:
-
-```shell
-ytt -f package-contents/config/values.yml -f package-contents/config/config.yml | kbld -f- --imgpkg-lock-output package-contents/.imgpkg/images.yml
-```
-
-Now we can publish our bundle to our registry:
-
-```shell
-imgpkg push -b ghcr.io/bzhtux/carvel-packages/go-mongo:1.0.1 -f package-contents/
-``
-
-### Create the CR
-
-Make a conformant metadata.yml file:
-
-```yaml
-cat > metadata.yml << EOF
-apiVersion: data.packaging.carvel.dev/v1alpha1
-kind: PackageMetadata
-metadata:
-  # This will be the name of our package
-  name: go-mongo.vmware.com
-spec:
-  displayName: "Sample Golang Mongo App"
-  longDescription: "Sample Golang Mongo App for service binding and Tanzu Application Platform"
-  shortDescription: "Sample Golang Mongo App for demoing"
-  categories:
-  - demo
-EOF
-```
-In order to create the Package CR with our OpenAPI Schema, we will export from our ytt schema:
-
-```shell
-ytt -f package-contents/config/values.yml --data-values-schema-inspect -o openapi-v3 > schema-openapi.yml
-```
-
-That command creates an OpenAPI document, from which we really only need the components.schema section for our Package CR.
-
-```yaml
-cat > package-template.yml << EOF
-#@ load("@ytt:data", "data")  # for reading data values (generated via ytt's data-values-schema-inspect mode).
-#@ load("@ytt:yaml", "yaml")  # for dynamically decoding the output of ytt's data-values-schema-inspect
----
-apiVersion: data.packaging.carvel.dev/v1alpha1
-kind: Package
-metadata:
-  name: #@ "go-mongo.vmware.com." + data.values.version
-spec:
-  refName: go-mongo.vmware.com
-  version: #@ data.values.version
-  releaseNotes: |
-        Initial release of the simple app package
-  valuesSchema:
-    openAPIv3: #@ yaml.decode(data.values.openapi)["components"]["schemas"]["dataValues"]
-  template:
-    spec:
-      fetch:
-      - imgpkgBundle:
-          image: #@ "ghcr.io/bzhtux/carvel-packages/go-mongo:" + data.values.version
-      template:
-      - ytt:
-          paths:
-          - "config/"
-      - kbld:
-          paths:
-          - ".imgpkg/images.yml"
-          - "-"
-      deploy:
-      - kapp: {}
-EOF
+curl -sL http://gomongo.127.0.0.1.nip.io:8080/get/byID/63515b321a0c3cb17aa08a5b | jq .
+{
+  "data": {
+    "Author": "bzhtux",
+    "ID": "63515b321a0c3cb17aa08a5b",
+    "Title": "Hello world"
+  },
+  "message": "Got doc from mongoDB",
+  "status": "Ok"
+}
+curl -sL -X DELETE http://gomongo.127.0.0.1.nip.io/del/byName/Hello%20world | jq .
+{
+  "message": "Doc deleted from mongoDB",
+  "status": "Ok"
+}
 ```
