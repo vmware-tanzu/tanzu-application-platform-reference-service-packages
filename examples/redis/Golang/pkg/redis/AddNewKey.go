@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/redis/Golang/models"
+	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/redis/golang/models"
 )
 
 func (h Handler) AddNewKey(c *gin.Context) {
-	var msg = models.Messages{}
+	var msg = models.Message{}
 	err := c.BindJSON(&msg)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -25,7 +25,6 @@ func (h Handler) AddNewKey(c *gin.Context) {
 				"message": "Key already exists: " + msg.Key,
 			})
 		} else {
-			log.Printf("Setting a new key %v with value %v", msg.Key, msg.Value)
 			_, err := client.Do("SET", msg.Key, msg.Value)
 			if err != nil {
 				log.Println(err.Error())

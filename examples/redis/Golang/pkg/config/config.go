@@ -3,57 +3,84 @@ package config
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/bzhtux/servicebinding/bindings"
+	"github.com/jinzhu/copier"
 	"github.com/kelseyhightower/envconfig"
-	. "github.com/mitchellh/mapstructure"
-	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/redis/Golang/models"
+	_ "github.com/mitchellh/mapstructure"
+	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/redis/golang/models"
 	"gopkg.in/yaml.v2"
 )
 
-type RedisConfig models.RedisSpec
-
-const (
-	CONFIG_DIR = "/config"
+var (
+	EnvConfigDir = strings.ToUpper(AppName) + "_CONFIG_DIR"
+	AppVersion   = "0.1.0"
+	AppPort      = 8080
 )
 
-func (rc *RedisConfig) LoadConfigFromFile() error {
-	file, err := os.Open(CONFIG_DIR + "/redis.yaml")
+const (
+	DEFAULT_CONFIG_DIR    = "/config"
+	ConfigFile            = "config.yml"
+	AppName               = "goredis"
+	AppDesc               = "Golang Redis App for demo purpose"
+	EnvServiceBindingRoot = "SERVICE_BINDING_ROOT"
+)
+
+type Conf models.Config
+
+func (cfg *Conf) GetConfigDir() *Conf {
+	cfg_dir, exists := os.LookupEnv(EnvConfigDir)
+	if !exists {
+		cfg.Dir.Root = DEFAULT_CONFIG_DIR
+	} else {
+		cfg.Dir.Root = cfg_dir
+	}
+	return cfg
+}
+
+func (cfg *Conf) LoadConfigFromFile() error {
+	config := cfg.GetConfigDir()
+	c, err := os.Open(filepath.Join(config.Dir.Root, ConfigFile))
 	if err != nil {
-		log.Printf("Error loading config file: %s\n", err.Error())
+		log.Printf("--- Error loading config file: %s\n", err.Error())
 		return err
 	}
-	defer file.Close()
+	defer c.Close()
 
-	d := yaml.NewDecoder(file)
+	d := yaml.NewDecoder(c)
 
-	if err := d.Decode(&rc); err != nil {
-		log.Printf("Error loading config file: %s\n", err.Error())
+	if err := d.Decode(&cfg); err != nil {
+		log.Printf("--- Error decoding config file: %s\n", err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func (rc *RedisConfig) LoadConfigFromEnv() {
-	envconfig.Process("", rc)
-}
-
-func (rc *RedisConfig) LoadConfigFromBindings(t string) error {
+func (cfg *Conf) LoadConfigFromBindings(t string) error {
 	b, err := bindings.NewBinding(t)
+	// log.Printf("*** New binding: %v", b)
 	if err != nil {
-		log.Printf("Error while getting bindings: %s\n", err.Error())
+		log.Printf("--- Error while getting bindings: %s\n", err.Error())
 		return err
 	}
-	if err := Decode(b, &rc); err != nil {
-		return err
-	}
+	// if err := Decode(b, &cfg.Database); err != nil {
+	// 	log.Printf("--- Error from load from binding: %s", err.Error())
+	// 	return err
+	// }
+	copier.Copy(&cfg.Database, &b)
 	return nil
 }
 
-func (rc *RedisConfig) NewConfig() *RedisConfig {
-	rc.LoadConfigFromFile()
-	rc.LoadConfigFromBindings("redis")
-	rc.LoadConfigFromEnv()
-	return rc
+func (cfg *Conf) NewConfig() {
+	cfg.LoadConfigFromFile()
+	cfg.LoadConfigFromBindings("redis")
+	// log.Printf("*** REDIS_SSL = %v", cfg.Database.SSL)
+	if err := envconfig.Process("", &cfg.Database); err != nil {
+		log.Printf("Envconfig.process Error: %s", err.Error())
+	}
+	// log.Printf("*** REDIS_USERNAME = %s", cfg.Database.Username)
+	// log.Printf("*** REDIS_SSL = %v", cfg.Database.SSL)
 }

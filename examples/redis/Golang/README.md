@@ -62,6 +62,7 @@ docker pull ghcr.io/bzhtux/sample_apps-redis:<version>
 cat <<EOF | kind create cluster --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+name: goredis
 nodes:
 - role: control-plane
   kubeadmConfigPatches:
@@ -224,7 +225,7 @@ spec:
 Define connection informations and crededentials within the k8s/01.secret.yaml as below:
 
 ```shell
-export REDIS_HOST=$(echo -n "redis-master.redis-app.svc.cluster.local" | base64)
+export REDIS_HOST=$(echo -n "redis-master.goredis.svc.cluster.local" | base64)
 export REDIS_USER=$(echo -n "default" | base64)
 export REDIS_PASS=$(echo -n "${REDIS_PASSWORD}" | base64)
 export REDIS_PORT=$(echo -n "6379" |  base64)
@@ -291,7 +292,7 @@ spec:
     spec:
       containers:
       - name: redis-app
-        image: ghcr.io/bzhtux/sample_apps-redis:v0.0.7
+        image: bzhtux/goredis-arm64:0.1.0
         volumeMounts:
         - name: services-bindings
           mountPath: "/bindings"

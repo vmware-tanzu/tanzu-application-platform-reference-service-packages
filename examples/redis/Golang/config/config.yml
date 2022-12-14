@@ -1,0 +1,14 @@
+---
+app:
+ name: "goredis"
+ desc: "Golang Redis App for demo purpose"
+ version: 0.1.0
+ port: 8080
+database:
+  host: "localhost"
+  port: 6379
+  username: default
+  password:  MySupersecretP@ssword_
+  database: "0"
+  ssl: false
+  type: "redis"

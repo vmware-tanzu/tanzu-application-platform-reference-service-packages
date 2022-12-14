@@ -19,7 +19,7 @@ LABEL maintainer="Yannick Foeillet <yfoeillet@vmware.com>"
 # RUN apk --no-cache add curl jq
 RUN adduser -h /app -s /bin/sh -u 1000 -D app
 RUN mkdir -p /config
-COPY config/redis.yaml /config/
+COPY config/config.yml /config/
 WORKDIR /app
 COPY --from=build-env /go/src/github.com/bzhtux/redis/redis-app /app/
 USER 1000
