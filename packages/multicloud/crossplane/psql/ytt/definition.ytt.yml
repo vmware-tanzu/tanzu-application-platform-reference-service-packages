@@ -49,6 +49,27 @@ spec:
                   collation:
                     type: string
                     default: en_US.utf8
+                  gatewayId:
+                    type: string
+                    description: (only public AWS) 
+                  subnetACidrBlock:
+                    type: string
+                    description: (only AWS) 
+                  subnetBCidrBlock:
+                    type: string
+                    description: (only AWS) 
+                  cidrBlocks:
+                    type: array
+                    description: (only AWS) cidr blocks for AWS security group
+                    items:
+                      type: string
+                      pattern: '^(1?\d{1,2}|2[01234]\d|25[012345])(\.(1?\d{1,2}|2[01234]\d|25[012345])){3}\/(\d|[12]\d|3[012])$'
+                  dbSubnetGroupName:
+                    type: string
+                    description: (only AWS) name for the AWS subnet group
+                  vpcId:
+                    type: string
+                    description: (only AWS) id of the AWS vpc
                   charset:
                     type: string
                     default: utf8

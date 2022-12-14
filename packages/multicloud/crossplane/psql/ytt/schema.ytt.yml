@@ -26,6 +26,12 @@ providers:
     image: xpkg.upbound.io/crossplane-contrib/provider-helm
     version: ">=v0.12.0"
 
+  aws:
+    name: aws
+    image: xpkg.upbound.io/upbound/provider-aws
+    version: ">=v0.22.0"
+    configRef: default
+
 crossplane:
   #@schema/title "CrossplaneNamespace"
   #@schema/desc "The namespace where crossplane controller is installed"
