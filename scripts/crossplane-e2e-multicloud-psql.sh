@@ -25,6 +25,8 @@ pushd $(dirname $0)
 
 echo "> Installing required providers"
 
+trap $(dirname $0)/crossplane-e2e-multicloud-psql/cleanup.sh EXIT
+
 ./crossplane-e2e-install-azure-provider.sh ${CROSSPLANE_NAMESPACE} ${AZURE_CREDS_SECRET_NAME} 
 ./crossplane-e2e-install-helm-provider.sh
 ./crossplane-e2e-install-k8s-provider.sh
