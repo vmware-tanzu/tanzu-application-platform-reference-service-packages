@@ -21,5 +21,6 @@ type Config struct {
 			Database   string
 			Collection string
 		}
+		Type	   struct
 	}
 }
