@@ -9,20 +9,21 @@ import (
 	"github.com/bzhtux/servicebinding/bindings"
 	"github.com/jinzhu/copier"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/postgresql/golang/models"
+	"github.com/vmware-tanzu/tanzu-application-platform-reference-service-packages/examples/mongodb/golang/models"
 	"gopkg.in/yaml.v2"
 )
 
 var (
 	EnvConfigDir = strings.ToUpper(AppName) + "_CONFIG_DIR"
-	AppVersion   = "0.0.1"
+	AppVersion   = "0.0.2"
 	AppPort      = 8080
 )
 
 const (
 	DEFAULT_CONFIG_DIR    = "/config"
 	ConfigFile            = "config.yml"
-	AppName               = "gopg"
+	AppName               = "gomongo"
+	AppDesc               = "Golang MongoDB App for demo purpose"
 	EnvServiceBindingRoot = "SERVICE_BINDING_ROOT"
 )
 
@@ -35,7 +36,6 @@ func (cfg *Conf) GetConfigDir() *Conf {
 	} else {
 		cfg.Dir.Root = cfg_dir
 	}
-
 	return cfg
 }
 
@@ -43,7 +43,7 @@ func (cfg *Conf) LoadConfigFromFile() error {
 	config := cfg.GetConfigDir()
 	c, err := os.Open(filepath.Join(config.Dir.Root, ConfigFile))
 	if err != nil {
-		log.Printf("Error opening PostgreSQL config file: %s\n", err.Error())
+		log.Printf("--- Error opening Config file: %s", err.Error())
 		return err
 	}
 	defer c.Close()
@@ -54,11 +54,10 @@ func (cfg *Conf) LoadConfigFromFile() error {
 	return nil
 }
 
-func (cfg *Conf) LoadConfigFromBindings(t string) error {
-
+func (cfg *Conf) LoadConfigFromBinding(t string) error {
 	b, err := bindings.NewBinding(t)
 	if err != nil {
-		log.Printf("Error while getting bindings: %s\n", err.Error())
+		// log.Printf("--- Error getting bindings: %s", err.Error())
 		return err
 	}
 
@@ -68,10 +67,10 @@ func (cfg *Conf) LoadConfigFromBindings(t string) error {
 }
 
 func (cfg *Conf) NewConfig() {
-	// 1st : Load config from config file
+	// 1st : Load Config from file
 	cfg.LoadConfigFromFile()
-	// 2nd : Load config from bindings
-	cfg.LoadConfigFromBindings("postgresql")
-	// 3rd : Load config from env
+	// 2nd : Load Config from env
+	cfg.LoadConfigFromBinding("mongodb")
+	// 3rd : Load Config from Bindings
 	envconfig.Process("", cfg.Database)
 }

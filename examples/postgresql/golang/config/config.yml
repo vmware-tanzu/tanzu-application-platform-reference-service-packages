@@ -1,0 +1,14 @@
+---
+app:
+  name: "gopg"
+  Desc: ""
+  version: "0.0.1"
+  port: 8080
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "c2FtcGxlX3Bhc3N3b3Jk"
+  database: postgres
+  sslenabled: false
+  type: "postgresql"

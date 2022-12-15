@@ -9,7 +9,7 @@ import (
 )
 
 func (h Handler) AddNewKey(c *gin.Context) {
-	var msg = models.Messages{}
+	var msg = models.Message{}
 	err := c.BindJSON(&msg)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
