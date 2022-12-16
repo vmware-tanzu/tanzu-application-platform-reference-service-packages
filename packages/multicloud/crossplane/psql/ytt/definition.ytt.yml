@@ -27,16 +27,20 @@ spec:
         properties:
           spec:
             type: object
+            required:
+            - parameters
             properties:
               parameters:
                 type: object
+                required:
+                - location
                 properties:
                   location:
                     type: string
                   version:
                     type: string
                     default: "13"
-                    enum: ["11", "12", "13"]
+                    enum: ["11", "12", "13", "14", "15"]
                   adminUsername:
                     type: string
                     default: postgres
@@ -49,27 +53,6 @@ spec:
                   collation:
                     type: string
                     default: en_US.utf8
-                  gatewayId:
-                    type: string
-                    description: (only public AWS) 
-                  subnetACidrBlock:
-                    type: string
-                    description: (only AWS) 
-                  subnetBCidrBlock:
-                    type: string
-                    description: (only AWS) 
-                  cidrBlocks:
-                    type: array
-                    description: (only AWS) cidr blocks for AWS security group
-                    items:
-                      type: string
-                      pattern: '^(1?\d{1,2}|2[01234]\d|25[012345])(\.(1?\d{1,2}|2[01234]\d|25[012345])){3}\/(\d|[12]\d|3[012])$'
-                  dbSubnetGroupName:
-                    type: string
-                    description: (only AWS) name for the AWS subnet group
-                  vpcId:
-                    type: string
-                    description: (only AWS) id of the AWS vpc
                   charset:
                     type: string
                     default: utf8
@@ -80,10 +63,47 @@ spec:
                         type: string
                       endIpAddress:
                         type: string
-                required:
-                - location
-            required:
-            - parameters
+                  aws:
+                    type: object
+                    description: properties for AWS only
+                    required:
+                    - cidrBlocks
+                    - dbSubnetGroupName
+                    - vpcId
+                    properties:
+                      cidrBlocks:
+                        type: array
+                        description: cidr blocks for AWS security group
+                        default: 
+                        - "0.0.0.0/0"
+                        items:
+                          type: string
+                          pattern: '^(1?\d{1,2}|2[01234]\d|25[012345])(\.(1?\d{1,2}|2[01234]\d|25[012345])){3}\/(\d|[12]\d|3[012])$'
+                      dbSubnetGroupName:
+                        type: string
+                        description: name for the AWS subnet group
+                      vpcId:
+                        type: string
+                        description: id of the existing vpc
+                      public:
+                        type: object
+                        description: set these if you use the AWS public composition
+                        required:
+                        - gatewayId
+                        - subnetACidrBlock
+                        - subnetBCidrBlock
+                        properties:
+                          gatewayId:
+                            type: string
+                            description: id of the existing gateway
+                          subnetACidrBlock:
+                            type: string
+                            description: cidr block for the subnet a (creates two subnets, a and b)
+                            default: "10.100.255.0/25"
+                          subnetBCidrBlock:
+                            type: string
+                            description: cidr block for the subnet b (creates two subnets, a and b)
+                            default: "10.100.255.128/25"
           status:
             type: object
             properties:

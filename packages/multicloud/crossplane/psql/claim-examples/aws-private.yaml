@@ -1,0 +1,22 @@
+apiVersion: multi.ref.services.apps.tanzu.vmware.com/v1alpha1
+kind: PostgreSQLInstance
+metadata:
+  name: aws-psql-private-01
+  labels:
+    services.apps.tanzu.vmware.com/claimable: "true"
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: aws
+      connectivity: "private"
+  parameters:
+    location: eu-central-1
+    version: "12"
+    database: demo
+    collation: en_GB.utf8
+    storageClass: gp2
+    aws:
+      vpcId: vpc-0157e2424963dcd93
+      dbSubnetGroupName: trp-testing
+      cidrBlocks:
+        - 0.0.0.0/0
