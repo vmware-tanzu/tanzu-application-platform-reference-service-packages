@@ -11,6 +11,9 @@ on:
       package_version:
         type: string
         required: true
+      package_prerelease:
+        type: string
+        required: true
       package_name:
         type: string
         required: true
@@ -24,16 +27,19 @@ on:
       package_path:
         type: string
         required: true
-      kubernetes-version:
+      pull_request_number:
+        type: string
+        required: true
+      kubernetes_version:
         type: string
         default: v1.24.6
-      kind-version:
+      kind_version:
         type: string
         default: v0.16.0
-      kapp-controller-version:
+      kapp_controller_version:
         type: string
         default: v0.43.2
-      secretgen-controller-version:
+      secretgen_controller_version:
         type: string
         default: v0.12.0
 
@@ -60,9 +66,9 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           verbosity: 5
-          version: ${{ inputs.kind-version }}
-          kubectl_version: ${{ inputs.kubernetes-version }}
-          node_image: kindest/node:${{ inputs.kubernetes-version }}
+          version: ${{ inputs.kind_version }}
+          kubectl_version: ${{ inputs.kubernetes_version }}
+          node_image: kindest/node:${{ inputs.kubernetes_version }}
 
       - name: Verify Cluster
         run: |
@@ -73,8 +79,8 @@ jobs:
 
       - name: Install kapp-controller
         run: |
-          MANIFEST="https://github.com/vmware-tanzu/carvel-kapp-controller/releases/download/${{ inputs.kapp-controller-version }}/release.yml"
-          if [[ "${{ inputs.kapp-controller-version }}" == "latest" ]]; then
+          MANIFEST="https://github.com/vmware-tanzu/carvel-kapp-controller/releases/download/${{ inputs.kapp_controller_version }}/release.yml"
+          if [[ "${{ inputs.kapp_controller_version }}" == "latest" ]]; then
             MANIFEST="https://github.com/vmware-tanzu/carvel-kapp-controller/releases/latest/download/release.yml"
           fi
 
@@ -87,8 +93,8 @@ jobs:
 
       - name: Install secretgen-controller
         run: |
-          MANIFEST="https://github.com/vmware-tanzu/carvel-secretgen-controller/releases/download/${{ inputs.secretgen-controller-version }}/release.yml"
-          if [[ "${{ inputs.secretgen-controller-version }}" == "latest" ]]; then
+          MANIFEST="https://github.com/vmware-tanzu/carvel-secretgen-controller/releases/download/${{ inputs.secretgen_controller_version }}/release.yml"
+          if [[ "${{ inputs.secretgen_controller_version }}" == "latest" ]]; then
             MANIFEST="https://github.com/vmware-tanzu/carvel-secretgen-controller/releases/latest/download/release.yml"
           fi
 
@@ -135,12 +141,25 @@ jobs:
         run: |
           export PACKAGE_METADATA_NAME=$(yq e '.metadata.name' ${PACKAGE_DIR}/package-metadata.yml)
           echo PACKAGE_METADATA_NAME=${PACKAGE_METADATA_NAME} >> $GITHUB_ENV
-          if [ -x ${SCRIPT} ]; then
+
+          if [[ "$PRERELEASE" =~ ^[tT][rR][uU][eE]$ ]]; then
+            if [ -x ${SCRIPT} ]; then
+              ${SCRIPT}
+            else
+              # no pre-release test script provided
+              gh label create -c ffaa00 --force untested
+              gh pr edit $PULL_REQUEST_NUMBER --add-label untested
+              gh pr comment $PULL_REQUEST_NUMBER --body "WARNING - package ${PACKAGE_METADATA_NAME}/${PACKAGE_VERSION} has not been tested"
+            fi
+          else
             ${SCRIPT}
           fi
         env:
           SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}.sh
           PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
+          PRERELEASE: ${{ inputs.package_prerelease }}
+          PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Cleanup Carvel package
         if: always()

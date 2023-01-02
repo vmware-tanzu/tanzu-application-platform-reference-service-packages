@@ -13,6 +13,9 @@ on:
       version:
         value: ${{ jobs.bump-version.outputs.version }}
         description: The new published version
+      is_prerelease:
+        value: ${{ jobs.bump-version.outputs.is_prerelease }}
+        description: Whether the version is a pre-release or not
 
 jobs:
 
@@ -21,7 +24,8 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      version:  ${{ steps.bump.outputs.new_tag }}
+      version: ${{ steps.bump.outputs.new_tag }}
+      is_prerelease: ${{ steps.pre.outputs.is_prerelease }}
 
     steps:
 
@@ -38,3 +42,11 @@ jobs:
           RELEASE_BRANCHES: main
           PRERELEASE: true
           DEFAULT_BUMP: ${{ inputs.default_bump }}
+
+      - name: Check pre-release
+        id: pre
+        run: |
+          [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && is_prerelease=false || is_prerelease=true
+          echo "is_prerelease=${is_prerelease}" >> $GITHUB_OUTPUT
+        env:
+          TAG: ${{ steps.bump.outputs.new_tag }}

@@ -24,12 +24,6 @@ on:
       run-test:
         type: boolean
         default: false
-      kubernetes-version:
-        type: string
-        default: v1.24.6
-      kind-version:
-        type: string
-        default: v0.16.0
 
     outputs:
       package_repository:

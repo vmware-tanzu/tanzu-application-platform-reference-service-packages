@@ -25,13 +25,7 @@ on:
         type: string
         description: Directory path to hold the contents of the Carvel repository
         default: repository
-      kubernetes-version:
-        type: string
-        default: v1.24.6
-      kind-version:
-        type: string
-        default: v0.16.0
-      kctrl-version:
+      kctrl_version:
         type: string
         default: v0.43.2
 
@@ -75,7 +69,7 @@ jobs:
         uses: vmware-tanzu/carvel-setup-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          kctrl: ${{ inputs.kctrl-version }}
+          kctrl: ${{ inputs.kctrl_version }}
 
       - name: Kctrl Release
         run: make kctrl-release
