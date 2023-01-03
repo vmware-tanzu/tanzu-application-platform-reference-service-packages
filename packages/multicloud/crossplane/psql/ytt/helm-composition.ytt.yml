@@ -22,7 +22,7 @@ spec:
       spec:
         forProvider:
           manifest:
-            apiVersion: tf.crossplane.io/v1alpha1
+            apiVersion: tf.upbound.io/v1beta1
             kind: ProviderConfig
             spec:
               credentials: []
@@ -52,7 +52,7 @@ spec:
 
   - name: password
     base:
-      apiVersion: tf.crossplane.io/v1alpha1
+      apiVersion: tf.upbound.io/v1beta1
       kind: Workspace
       spec:
         forProvider:
