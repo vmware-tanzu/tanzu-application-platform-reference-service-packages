@@ -1,9 +1,0 @@
-#@data/values-schema
----
-#@schema/desc "The package full name as from .spec.refName"
-#@schema/validation min_len=1
-refName: ""
-
-#@schema/desc "The namespace where the package must be installed"
-#@schema/validation min_len=1
-namespace: services

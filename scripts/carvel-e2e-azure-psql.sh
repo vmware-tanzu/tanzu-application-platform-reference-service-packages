@@ -4,10 +4,13 @@ set -euo pipefail
 
 TIMEOUT=${TIMEOUT:-5m}
 
+SCRIPT_FOLDER=$(basename $0 .sh)
+
 export NAME="${NAME:-$(dd if=/dev/urandom bs=20 count=1 2>/dev/null | sha1sum | head -c 20)}"
 PACKAGE_NAMESPACE=${PACKAGE_NAMESPACE:-services}
 export APP_NAMESPACE=${APP_NAMESPACE:-services}
 export APP_NAME=${APP_NAME:-${NAME}}
+ASO_CONTROLLER_NAMESPACE="azureserviceoperator-system"
 
 pushd $(dirname $0)
 
@@ -24,7 +27,7 @@ cat <<EOF >$VALUES
 name: ${NAME}
 namespace: ${PACKAGE_NAMESPACE}
 location: ${LOCATION}
-aso_controller_namespace: azureserviceoperator-system
+aso_controller_namespace: ${ASO_CONTROLLER_NAMESPACE}
 create_namespace: false
 
 server:
@@ -52,7 +55,7 @@ SA=${PACKAGE_METADATA_NAME}
 INSTALL_NAME=${PACKAGE_METADATA_NAME}
 
 echo ">> Prepare RBAC"
-ytt -f ./carvel-e2e-azure-psql/rbac.ytt.yml -v serviceAccount=${SA} -v namespace=${PACKAGE_NAMESPACE} | kubectl apply -f -
+ytt -f ./${SCRIPT_FOLDER}/rbac.ytt.yml -v serviceAccount=${SA} -v namespace=${PACKAGE_NAMESPACE} | kubectl apply -f -
 
 echo ">> Install package"
 kctrl package install -n ${PACKAGE_NAMESPACE} -i ${INSTALL_NAME} -p ${PACKAGE_METADATA_NAME} --version ${PACKAGE_VERSION} --values-file ${VALUES} --service-account-name ${SA} --wait=false
@@ -67,12 +70,12 @@ while [ $RESTARTS_COUNT -lt $RESTARTS_MAX ]; do
   else
     # ASO needs to be kicked because it conflicts with kapp-controller for taking ownership of Azure resources
     let RESTARTS_COUNT=$RESTARTS_COUNT+1
-    kubectl -n azureserviceoperator-system rollout restart deployments.apps azureserviceoperator-controller-manager
+    kubectl -n ${ASO_CONTROLLER_NAMESPACE} rollout restart deployments.apps azureserviceoperator-controller-manager
   fi
 done
 
 # run test
 SECRET_NAME="${NAME}-bindable"
-./carvel-e2e-azure-psql/test.sh ${SECRET_NAME} ${APP_NAME}
+./${SCRIPT_FOLDER}/test.sh ${SECRET_NAME} ${APP_NAME}
 
 popd

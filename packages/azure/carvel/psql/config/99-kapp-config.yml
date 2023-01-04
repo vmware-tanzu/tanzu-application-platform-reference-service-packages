@@ -51,3 +51,7 @@ rebaseRules:
   type: copy
   sources: [new, existing]
   resourceMatchers: *flexibleServerResources
+
+ownershipLabelRules:
+- path: [metadata, labels]
+  resourceMatchers: *flexibleServerResources
