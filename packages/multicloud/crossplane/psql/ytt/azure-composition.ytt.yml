@@ -1,5 +1,8 @@
 #@ load("@ytt:data", "data")
 ---
+
+#@ load("shared.lib.yml", "labelsForSecret", "tfProviderConfig", "tfWorkspace")
+
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
@@ -14,80 +17,9 @@ spec:
     apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
     kind: #@ data.values.xrd.names.kind
   resources:
-  - name: tf-providerconfig
-    base:
-      apiVersion: kubernetes.crossplane.io/v1alpha1
-      kind: Object
-      spec:
-        forProvider:
-          manifest:
-            apiVersion: tf.upbound.io/v1beta1
-            kind: ProviderConfig
-            spec:
-              credentials: []
-              #@yaml/text-templated-strings
-              configuration: |
-                terraform {
-                  required_providers {
-                    random = {
-                      source = "hashicorp/random"
-                      version = "3.4.3"
-                    }
-                  }
-            
-                  backend "kubernetes" {
-                    secret_suffix     = "providerconfig-default"
-                    namespace         = "(@= data.values.crossplane.namespace @)"
-                    in_cluster_config = true
-                  }
-                }
-                provider "random" {}
-    patches:
-    - type: FromCompositeFieldPath
-      fromFieldPath: metadata.uid
-      toFieldPath: spec.forProvider.manifest.metadata.name
-  - name: password
-    base:
-      apiVersion: tf.upbound.io/v1beta1
-      kind: Workspace
-      spec:
-        forProvider:
-          module: |
-            resource "random_password" "password" {
-              length  = 64
-              special = false
-            }
-
-            output "password" {
-              value     = random_password.password.result
-              sensitive = true
-            }
-          source: Inline
-        writeConnectionSecretToRef:
-          namespace: #@ data.values.crossplane.namespace
-    patches:
-    - type: FromCompositeFieldPath
-      fromFieldPath: metadata.uid
-      toFieldPath: spec.writeConnectionSecretToRef.name
-      transforms:
-        - type: string
-          string:
-            type: Format
-            fmt: '%s-postgresql-admin'
-    - type: FromCompositeFieldPath
-      fromFieldPath: metadata.uid
-      toFieldPath: spec.providerConfigRef.name
-    - type: ToCompositeFieldPath
-      fromFieldPath: metadata.labels[crossplane.io/claim-name]
-      toFieldPath: spec.writeConnectionSecretToRef.name
-    - type: ToCompositeFieldPath
-      fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
-      toFieldPath: spec.writeConnectionSecretToRef.namespace
-    - type: ToCompositeFieldPath
-      fromFieldPath: metadata.labels[crossplane.io/claim-name]
-      toFieldPath: status.binding.name
-    connectionDetails:
-    - fromConnectionSecretKey: password
+  - #@ labelsForSecret("azure")
+  - #@ tfProviderConfig(data.values.crossplane.namespace)
+  - #@ tfWorkspace(data.values.crossplane.namespace)
   - name: resourcegroup
     base: 
       apiVersion: azure.upbound.io/v1beta1

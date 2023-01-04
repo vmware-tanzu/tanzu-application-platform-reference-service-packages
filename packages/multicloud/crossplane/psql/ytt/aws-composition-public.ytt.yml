@@ -1,6 +1,7 @@
 #@ load("@ytt:data", "data")
 ---
-#@ load("aws-composition.lib.yml", "tfProviderConfig", "tfWorkspace", "rdsInstance", "securityGroup", "securityGroupRule", "subnet", "routeTableAssociation", "routeTable", "route", "subnetGroup")
+#@ load("aws-composition.lib.yml",  "rdsInstance", "securityGroup", "securityGroupRule", "subnet", "routeTableAssociation", "routeTable", "route", "subnetGroup")
+#@ load("shared.lib.yml", "labelsForSecret", "tfProviderConfig", "tfWorkspace")
 
 #@ subnetASuffix = '-a'
 #@ subnetAFormat = 'subnet-a-%s'
@@ -27,6 +28,7 @@ spec:
     apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
     kind: #@ data.values.xrd.names.kind
   resources:
+  - #@ labelsForSecret("aws")
   - #@ tfProviderConfig(data.values.crossplane.namespace)
   - #@ tfWorkspace(data.values.crossplane.namespace)
   - #@ rdsInstance(data.values.crossplane.namespace, data.values.providers.aws.configRef, True)

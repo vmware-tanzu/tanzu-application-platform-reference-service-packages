@@ -1,0 +1,111 @@
+
+#@ def labelsForSecret(infra):
+name: connectionSecret
+base:
+  apiVersion: kubernetes.crossplane.io/v1alpha1
+  kind: Object
+  spec:
+    forProvider:
+      manifest:
+        apiVersion: v1
+        kind: Secret
+        spec: {}
+        metadata:
+          labels:
+            services.apps.tanzu.vmware.com/class: multicloud-psql
+            services.apps.tanzu.vmware.com/infra: #@ infra
+patches:
+- type: FromCompositeFieldPath
+  fromFieldPath: metadata.labels[crossplane.io/claim-name]
+  toFieldPath: spec.forProvider.manifest.metadata.name
+- type: FromCompositeFieldPath
+  fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+  toFieldPath: spec.forProvider.manifest.metadata.namespace
+- type: FromCompositeFieldPath
+  fromFieldPath: spec.parameters.version
+  toFieldPath: spec.forProvider.manifest.metadata.labels[services.apps.tanzu.vmware.com/version]
+- type: FromCompositeFieldPath
+  fromFieldPath: spec.parameters.location
+  toFieldPath: spec.forProvider.manifest.metadata.labels[services.apps.tanzu.vmware.com/location]
+#@ end
+
+#@ def tfProviderConfig(crossplaneNamespace):
+name: tf-providerconfig
+base:
+  apiVersion: kubernetes.crossplane.io/v1alpha1
+  kind: Object
+  spec:
+    forProvider:
+      manifest:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: ProviderConfig
+        spec:
+          credentials: []
+          #@yaml/text-templated-strings
+          configuration: |
+            terraform {
+              required_providers {
+                random = {
+                  source = "hashicorp/random"
+                  version = "3.4.3"
+                }
+              }
+        
+              backend "kubernetes" {
+                secret_suffix     = "providerconfig-default"
+                namespace         = "(@= crossplaneNamespace @)"
+                in_cluster_config = true
+              }
+            }
+            provider "random" {}
+patches:
+- type: FromCompositeFieldPath
+  fromFieldPath: metadata.uid
+  toFieldPath: spec.forProvider.manifest.metadata.name
+#@ end
+
+
+#@ def tfWorkspace(crossplaneNamespace):
+name: password
+base:
+  apiVersion: tf.upbound.io/v1beta1
+  kind: Workspace
+  spec:
+    forProvider:
+      module: |
+        resource "random_password" "password" {
+          length  = 64
+          special = false
+        }
+
+        output "password" {
+          value     = random_password.password.result
+          sensitive = true
+        }
+      source: Inline
+    writeConnectionSecretToRef:
+      namespace: #@ crossplaneNamespace
+patches:
+- type: FromCompositeFieldPath
+  fromFieldPath: metadata.uid
+  toFieldPath: spec.writeConnectionSecretToRef.name
+  transforms:
+    - type: string
+      string:
+        type: Format
+        fmt: '%s-postgresql-admin'
+- type: FromCompositeFieldPath
+  fromFieldPath: metadata.uid
+  toFieldPath: spec.providerConfigRef.name
+- type: ToCompositeFieldPath
+  fromFieldPath: metadata.labels[crossplane.io/claim-name]
+  toFieldPath: spec.writeConnectionSecretToRef.name
+- type: ToCompositeFieldPath
+  fromFieldPath: metadata.labels[crossplane.io/claim-namespace]
+  toFieldPath: spec.writeConnectionSecretToRef.namespace
+- type: ToCompositeFieldPath
+  fromFieldPath: metadata.labels[crossplane.io/claim-name]
+  toFieldPath: status.binding.name
+connectionDetails:
+- fromConnectionSecretKey: password
+#@ end
