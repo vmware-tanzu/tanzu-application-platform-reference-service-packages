@@ -233,7 +233,7 @@ spec:
         app.kubernetes.io/component: #@ data.values.name
         app.kubernetes.io/instance: "$(.server.metadata.name)"
         services.apps.tanzu.vmware.com/class: azure-postgres
-    type: postgresql
+    type: servicebinding.io/postgresql
     stringData:
       type: postgresql
       port: "5432"
