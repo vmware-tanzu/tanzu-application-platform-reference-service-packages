@@ -75,6 +75,7 @@ jobs:
       packages_list: ${{ needs.list-packages.outputs.carvel }}
       package_version: ${{ needs.bump-version.outputs.version }}
       repo_version: ${{ needs.bump-version.outputs.version }}
+      prepare_repo_pr: ${{ needs.bump-version.outputs.is_prerelease == 'false' }}
       release: true
 
   carvel-test:

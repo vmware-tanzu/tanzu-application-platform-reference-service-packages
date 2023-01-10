@@ -1,7 +1,0 @@
-#@data/values
----
-name: elasticache
-namespace: default
-cacheSubnetGroupName: default
-vpcSecurityGroupIDs:
-  - vpc-0123456789

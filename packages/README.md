@@ -26,7 +26,6 @@ packages
 ├── aws
 │   └── carvel
 │       └── elasticache
-│           ├── build-values.yml
 │           ├── config
 │           │   ├── 00-schema.yml
 │           │   ├── 01-replication-group.ytt.yml
@@ -54,7 +53,7 @@ The contents of the `<PROVIDER>/<PACKAGING>/<NAME>` directory depends on the spe
 
 ### Carvel
 
-The `kctrl` utility from [Carvel suite](https://carvel.dev) is being used to author packages, which makes use of other tools in the suite as well (i.e. `ytt`).
+The `kctrl` utility from [Carvel suite](https://carvel.dev) is being used to author packages in combination with other tools in the suite (i.e. `ytt`).
 
 The metadata files required to create the package are stored as [ytt templates](../config/carvel/)
 to easily define a standard to create multiple packages.
@@ -67,28 +66,19 @@ that is required to fill some fields in other template files, in a DRY fashion.
 
 *DRY: Don't Repeat Yourself
 
-The `config` directory inside the package home holds the ytt files that define the resources that will be created by the package installation
-as well as the schema definition for the input values.
+The `config` directory inside the package home holds the ytt files that define the resources
+that will be created by the package installation as well as the schema definition for the input values.
 
 **N.B. The name of such a folder MUST be `config`, as it is hardcoded in the mentioned templates.**
 
-If some sort of validation of the input data has been implemented in the ytt files, you also need
-a sample values file to feed `kctrl` with at building time, otherwise it won't succeed.
-Those sample data are just used at this stage and won't be included in the package itself.
-The sample values file name, if required, MUST be stored into the `PACKAGE_BUILD_VALUES` variable.
-
-**N.B. By default, the CI workflow assumes that such is called `build-values.yml`, therefore packages
-undergoing continuous integration MUST use this name.**
-
-The command used to build the package and publish it to the container registry is `make kctrl-release`, which uses a few environment variables
-for configuration.
+The command used to build the package and publish it to the container registry is `make kctrl-release`,
+which uses a few environment variables for configuration.
 The following snippet defines a quick way of building all the `carvel` packages in the `packages` folder.
 Additionally, it uploads the packages to the ghcr.io service in the `org/repository` repository (do adjust it to your own account),
 in a hierarchy that reflects the filesystem.
 
 ```sh
 PACKAGE_REGISTRY="ghcr.io"
-PACKAGE_BUILD_VALUES="build-values.yml"
 for PACKAGE_DIR in $(find packages -type d -mindepth 3 -maxdepth 3); do
   if [[ $(cut -d/ -f3 <<<${PACKAGE_DIR}) == "carvel" ]]; then
     PACKAGE_REPOSITORY="org/repository/${PACKAGE_DIR#packages/}"
@@ -97,8 +87,7 @@ for PACKAGE_DIR in $(find packages -type d -mindepth 3 -maxdepth 3); do
 done
 ```
 
-The prerequisites to that are that you must be authenticated to ghcr.io and you must have the correct permissions
-to write packages to `org`.
+You must be authenticated to ghcr.io and you must have the correct permissions to write packages to `org`.
 The authentication credentials can be provided either via [Docker login][docker-login] or via [`imgpkg` environment variables][imgpkg-auth-env], for example:
 
 ```sh
@@ -109,6 +98,3 @@ export IMGPKG_REGISTRY_PASSWORD="my-personal-access-token"
 
 [imgpkg-auth-env]: https://carvel.dev/imgpkg/docs/v0.34.0/auth/#via-environment-variables
 [docker-login]: https://docs.docker.com/engine/reference/commandline/login/
-
-### Crossplane
-
