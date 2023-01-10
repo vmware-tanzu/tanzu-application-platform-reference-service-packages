@@ -115,8 +115,16 @@ nav:
         - usecases/azure/packages/mongodb/crossplane/consume-package.md
     - Prerequisites:
       - usecases/azure/prerequisites/index.md
+  - Multicloud:
+    - Packages:
+      - Postgresql with Crossplane:
+        - usecases/multicloud/packages/psql/index.md
+        - usecases/multicloud/packages/psql/create.md
 - Crossplane:
   - crossplane/index.md
   - Providers:
     - crossplane/providers/aws.md
     - crossplane/providers/azure.md
+    - crossplane/providers/terraform.md
+    - crossplane/providers/helm.md
+    - crossplane/providers/kubernetes.md
