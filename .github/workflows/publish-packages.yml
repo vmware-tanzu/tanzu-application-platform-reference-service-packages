@@ -21,7 +21,22 @@ on:
 
 jobs:
 
+  parameters:
+    runs-on: ubuntu-latest
+
+    outputs:
+      packages_basedir: ${{ steps.params.outputs.packages_basedir}}
+
+    steps:
+
+      - name: Set parameters
+        id: params
+        run: |
+          echo "packages_basedir=${PACKAGES_BASEDIR}" >> $GITHUB_OUTPUT
+
   list-packages:
+    needs:
+      - parameters
     uses: ./.github/workflows/reusable-list-packages.yml
     with:
       basedir: packages
@@ -34,6 +49,7 @@ jobs:
 
   crossplane-publish:
     needs:
+      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.crossplane_publish == 'true'
@@ -47,9 +63,11 @@ jobs:
       packages_basedir: ${{ needs.list-packages.outputs.basedir }}
       package_path: ${{ matrix.path }}
       run-test: ${{ github.event_name == 'pull_request' }}
+      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
 
   carvel-publish-package:
     needs:
+      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.carvel_publish == 'true'
@@ -60,6 +78,7 @@ jobs:
       package_name: ${{ matrix.name }}
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
+<<<<<<< HEAD
       packages_basedir: ${{ needs.list-packages.outputs.basedir }}
       package_path: ${{ matrix.path }}
 
@@ -97,3 +116,7 @@ jobs:
       pull_request_number: ${{ needs.carvel-publish-repo.outputs.pull_request_number}}
       package_prerelease: ${{ needs.bump-version.outputs.is_prerelease }}
     secrets: inherit
+=======
+      run-test: ${{ github.event_name == 'pull_request' }}
+      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
+>>>>>>> main
