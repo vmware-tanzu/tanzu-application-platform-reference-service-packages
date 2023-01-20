@@ -1,0 +1,133 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+spec:
+  group: #@ data.values.xrd.group
+  names: #@ data.values.xrd.names
+  claimNames: #@ data.values.xrd.claimNames
+  connectionSecretKeys:
+  - type
+  - provider
+  - host
+  - port
+  - database
+  - username
+  - password
+  versions:
+
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required:
+            - parameters
+            properties:
+              parameters:
+                type: object
+                required:
+                - location
+                properties:
+                  location:
+                    type: string
+                  version:
+                    type: string
+                    default: "13"
+                    enum: ["11", "12", "13", "14", "15"]
+                  adminUsername:
+                    type: string
+                    default: postgres
+                  storageClass:
+                    type: string
+                    default: default
+                  database:
+                    type: string
+                    default: postgres
+                  collation:
+                    type: string
+                    default: en_US.utf8
+                  charset:
+                    type: string
+                    default: utf8
+                  firewallRule:
+                    type: object
+                    properties:
+                      startIpAddress:
+                        type: string
+                      endIpAddress:
+                        type: string
+                  aws:
+                    type: object
+                    description: properties for AWS only
+                    required:
+                    - cidrBlocks
+                    - dbSubnetGroupName
+                    - vpcId
+                    properties:
+                      cidrBlocks:
+                        type: array
+                        description: cidr blocks for AWS security group
+                        default: 
+                        - "0.0.0.0/0"
+                        items:
+                          type: string
+                          pattern: '^(1?\d{1,2}|2[01234]\d|25[012345])(\.(1?\d{1,2}|2[01234]\d|25[012345])){3}\/(\d|[12]\d|3[012])$'
+                      dbSubnetGroupName:
+                        type: string
+                        description: name for the AWS subnet group
+                      vpcId:
+                        type: string
+                        description: id of the existing vpc
+                      public:
+                        type: object
+                        description: set these if you use the AWS public composition
+                        required:
+                        - gatewayId
+                        - subnetACidrBlock
+                        - subnetBCidrBlock
+                        properties:
+                          gatewayId:
+                            type: string
+                            description: id of the existing gateway
+                          subnetACidrBlock:
+                            type: string
+                            description: cidr block for the subnet a (creates two subnets, a and b)
+                            default: "10.100.255.0/25"
+                          subnetBCidrBlock:
+                            type: string
+                            description: cidr block for the subnet b (creates two subnets, a and b)
+                            default: "10.100.255.128/25"
+          status:
+            type: object
+            properties:
+              version:
+                type: string
+              address:
+                type: string
+              location:
+                type: string
+              binding:
+                type: object
+                properties:
+                  name:
+                    type: string
+    additionalPrinterColumns:
+    - name: address
+      type: string
+      jsonPath: .status.address
+    - name: location
+      type: string
+      jsonPath: .status.location
+    - name: version
+      type: string
+      jsonPath: .status.version
+    - name: connection-details
+      type: string
+      jsonPath: .status.binding.name

@@ -1,0 +1,161 @@
+name: Reusable workflow for publishing Carvel packages repository
+
+on:
+
+  workflow_call:
+
+    inputs:
+      packages_basedir:
+        type: string
+        description: Packages base directory path
+        default: packages
+      packages_list:
+        type: string
+        description: List of packages that have been changed
+        required: true
+      repo_dir:
+        type: string
+        default: repository
+      release:
+        type: boolean
+        default: false
+      repo_name:
+        type: string
+        default: carvel-reference-packages
+      repo_version:
+        type: string
+        required: true
+      prepare_repo_pr:
+        type: boolean
+        default: false
+      package_version:
+        type: string
+        required: true
+      kctrl_version:
+        type: string
+        default: v0.43.2
+
+    outputs:
+      registry:
+        value: ${{ jobs.publish.outputs.registry }}
+      repository:
+        value: ${{ jobs.publish.outputs.repository }}
+      pull_request_number:
+        value: ${{ jobs.prepare.outputs.pull_request_number }}
+
+env:
+  CARVEL_REPO_DIR: ${{ inputs.repo_dir }}
+  CARVEL_REPO_NAME: ${{ inputs.repo_name }}
+  CARVEL_REPO_REGISTRY: ghcr.io
+  CARVEL_REPO_REPOSITORY: ${{ github.repository }}/${{ inputs.repo_name }}
+  CARVEL_REPO_VERSION: ${{ inputs.repo_version }}
+  REPO_BRANCH_NAME: carvel-repo-${{ inputs.repo_version }}
+  PACKAGE_VERSION: ${{ inputs.package_version }}
+
+jobs:
+
+  prepare:
+    runs-on: ubuntu-latest
+
+    outputs:
+      pull_request_number: ${{ steps.pr.outputs.PULL_REQUEST_NUMBER }}
+
+    steps:
+      
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      - name: Prepare git client
+        id: git
+        run: |
+          git config --global user.email "${{ github.event.repository.name }}@${{ github.repository_owner }}.github.io"
+          git config --global user.name "GitHub Actions Workflow"
+
+          sleep 5 && git fetch --all
+
+          echo "CURRENT_BRANCH=$(git branch --show-current)" >> $GITHUB_ENV
+
+      - name: Create branch
+        id: branch
+        run: |
+          # create new branch
+          git checkout -b ${REPO_BRANCH_NAME}
+
+          # include the changes from all the packages' branches
+          # and remove them at the end of the script
+          BRANCHES=
+          for PACKAGE_DIR in $(jq -r '.include[]|.path' <<<$PACKAGES_LIST); do
+            PACKAGE_METADATA_NAME=$(yq e '.metadata.name' ${PACKAGES_BASEDIR}/${PACKAGE_DIR}/package-metadata.yml)
+            PACKAGE_BRANCH="${PACKAGE_METADATA_NAME}/${PACKAGE_VERSION}"
+            BRANCHES="${BRANCHES} ${PACKAGE_BRANCH}"
+            git rebase origin/${PACKAGE_BRANCH}
+          done
+          trap "git push --delete origin ${BRANCHES}" EXIT
+
+          # prepare a proper commit message
+          COMMIT_MESSAGE="$(git log --pretty=format:'%s' ${CURRENT_BRANCH}..HEAD)"
+
+          # discard the existing commits from packages' branches but do keep the changed files
+          git reset --soft ${CURRENT_BRANCH}
+
+          # create a new commit on the repo branch and push it to origin
+          git add . && git commit -m "${COMMIT_MESSAGE}" && git push -u origin ${REPO_BRANCH_NAME}
+        env:
+          PACKAGES_BASEDIR: ${{ inputs.packages_basedir }}
+          PACKAGES_LIST: ${{ inputs.packages_list }}
+
+      - name: Create pull request
+        id: pr
+        if: inputs.prepare_repo_pr
+        run: |
+          COMMIT_MESSAGE="$(git log --pretty=format:'%s' HEAD~..HEAD)"
+
+          # create the pull request against CURRENT_BRANCH
+          gh pr create --base ${CURRENT_BRANCH} --title "Carvel repository release at commit ${{ github.sha }}" --body "${COMMIT_MESSAGE}"
+
+          # get pull request number
+          echo "PULL_REQUEST_NUMBER=$(gh pr view --json number -q '.number' ${REPO_BRANCH_NAME})" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  publish:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+
+    outputs:
+      registry: ${{ env.CARVEL_REPO_REGISTRY }}
+      repository: ${{ env.CARVEL_REPO_REPOSITORY }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.REPO_BRANCH_NAME }}
+
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          kctrl: ${{ inputs.kctrl_version }}
+
+      - name: Kctrl Release
+        id: kctrl
+        run: |
+          make kctrl-repo-release
+        env:
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.CARVEL_REPO_REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: ${{ github.actor }}
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        if: inputs.release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.CARVEL_REPO_VERSION }}
+          fail_on_unmatched_files: true
+          files: |
+            repository/package-repository.yml

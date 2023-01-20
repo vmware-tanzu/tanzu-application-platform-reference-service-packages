@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - develop
     paths:
       - 'packages/*/*/*/**'
 
@@ -38,7 +39,7 @@ jobs:
       - parameters
     uses: ./.github/workflows/reusable-list-packages.yml
     with:
-      basedir: ${{ needs.parameters.outputs.packages_basedir }}
+      basedir: packages
 
   bump-version:
     needs:
@@ -59,10 +60,11 @@ jobs:
       package_name: ${{ matrix.name }}
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
       run-test: ${{ github.event_name == 'pull_request' }}
-      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
 
-  carvel-publish:
+  carvel-publish-package:
     needs:
       - parameters
       - bump-version
@@ -70,10 +72,45 @@ jobs:
     if: needs.list-packages.outputs.carvel_publish == 'true'
     strategy:
       matrix: ${{ fromJson(needs.list-packages.outputs.carvel) }}
-    uses: ./.github/workflows/reusable-carvel-publish.yml
+    uses: ./.github/workflows/reusable-carvel-publish-package.yml
     with:
       package_name: ${{ matrix.name }}
       package_provider: ${{ matrix.provider }}
       package_version: ${{ needs.bump-version.outputs.version }}
-      run-test: ${{ github.event_name == 'pull_request' }}
-      packages_basedir: ${{ needs.parameters.outputs.packages_basedir }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
+
+  carvel-publish-repo:
+    if: needs.list-packages.outputs.carvel_publish == 'true'
+    uses: ./.github/workflows/reusable-carvel-publish-repo.yml
+    needs:
+      - list-packages
+      - bump-version
+      - carvel-publish-package
+    with:
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      packages_list: ${{ needs.list-packages.outputs.carvel }}
+      package_version: ${{ needs.bump-version.outputs.version }}
+      repo_version: ${{ needs.bump-version.outputs.version }}
+      prepare_repo_pr: ${{ needs.bump-version.outputs.is_prerelease == 'false' }}
+      release: true
+
+  carvel-test:
+    if: needs.list-packages.outputs.carvel_publish == 'true' && github.event_name == 'pull_request'
+    uses: ./.github/workflows/reusable-carvel-test.yml
+    needs:
+      - list-packages
+      - bump-version
+      - carvel-publish-repo
+    strategy:
+      matrix: ${{ fromJson(needs.list-packages.outputs.carvel) }}
+    with:
+      repo_version: ${{ needs.bump-version.outputs.version }}
+      package_name: ${{ matrix.name }}
+      package_provider: ${{ matrix.provider }}
+      package_version: ${{ needs.bump-version.outputs.version }}
+      packages_basedir: ${{ needs.list-packages.outputs.basedir }}
+      package_path: ${{ matrix.path }}
+      pull_request_number: ${{ needs.carvel-publish-repo.outputs.pull_request_number}}
+      package_prerelease: ${{ needs.bump-version.outputs.is_prerelease }}
+    secrets: inherit

@@ -1,0 +1,43 @@
+---
+apiVersion: kapp.k14s.io/v1alpha1
+kind: Config
+
+waitRules:
+- supportsObservedGeneration: false
+  conditionMatchers:
+  - type: ACK.ResourceSynced
+    status: "True"
+    success: true
+  - type: ACK.Terminal
+    status: "True"
+    failure: true
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: elasticache.services.k8s.aws/v1alpha1, kind: ReplicationGroup}
+  - apiVersionKindMatcher: {apiVersion: elasticache.services.k8s.aws/v1alpha1, kind: User}
+  - apiVersionKindMatcher: {apiVersion: elasticache.services.k8s.aws/v1alpha1, kind: UserGroup}
+
+- supportsObservedGeneration: false
+  conditionMatchers:
+  - type: ReconcileSucceeded
+    status: "True"
+    success: true  
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: secretgen.carvel.dev/v1alpha1, kind: SecretTemplate}
+
+rebaseRules:
+- paths:
+  - [spec, atRestEncryptionEnabled]
+  - [spec, cacheNodeType]
+  - [spec, cacheSubnetGroupName]
+  - [spec, description]
+  - [spec, engine]
+  - [spec, replicationGroupID]
+  - [spec, securityGroupIDs]
+  - [spec, snapshotRetentionLimit]
+  - [spec, snapshotWindow]
+  - [spec, transitEncryptionEnabled]
+  - [spec, userGroupIDs]
+  type: copy
+  sources: [new, existing]
+  resourceMatchers:
+  - apiVersionKindMatcher: {apiVersion: elasticache.services.k8s.aws/v1alpha1, kind: ReplicationGroup}

@@ -1,0 +1,27 @@
+#@ load("@ytt:data", "data")
+---
+#@ load("aws-composition.lib.yml", "rdsInstance", "securityGroup", "securityGroupRule")
+#@ load("shared.lib.yml", "labelsForSecret", "tfProviderConfig", "tfWorkspace")
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: #@ data.values.providers.aws.name + "-" + data.values.cloudServiceBindingType + "-private"
+  labels:
+    crossplane.io/xrd: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+    provider: #@ data.values.providers.aws.name
+    database: #@ data.values.cloudServiceBindingType
+    connectivity: "private"
+spec:
+  writeConnectionSecretsToNamespace: #@ data.values.crossplane.namespace
+  compositeTypeRef:
+    apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
+    kind: #@ data.values.xrd.names.kind
+  resources:
+  - #@ labelsForSecret("aws")
+  - #@ tfProviderConfig(data.values.crossplane.namespace)
+  - #@ tfWorkspace(data.values.crossplane.namespace)
+  - #@ rdsInstance(data.values.crossplane.namespace, data.values.providers.aws.configRef, False)
+  - #@ securityGroup()
+  - #@ securityGroupRule()
+

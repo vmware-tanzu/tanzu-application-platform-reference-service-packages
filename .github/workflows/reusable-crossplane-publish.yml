@@ -5,6 +5,13 @@ on:
   workflow_call:
 
     inputs:
+      packages_basedir:
+        type: string
+        description: Packages base directory path
+        default: packages
+      package_path:
+        type: string
+        required: true
       package_version:
         type: string
         required: true
@@ -17,12 +24,6 @@ on:
       run-test:
         type: boolean
         default: false
-      kubernetes-version:
-        type: string
-        default: v1.24.6
-      kind-version:
-        type: string
-        default: v0.16.0
 
     outputs:
       package_repository:
@@ -45,7 +46,9 @@ jobs:
       PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/crossplane/${{ inputs.package_name }}
       PACKAGE_PROVIDER: ${{ inputs.package_provider }}
       PACKAGE_NAME: ${{ inputs.package_name }}
-
+      PACKAGES_BASEDIR: ${{ inputs.packages_basedir }}
+      PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v3

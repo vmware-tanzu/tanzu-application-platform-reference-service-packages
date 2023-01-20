@@ -21,10 +21,10 @@ on:
       package_repository:
         type: string
         required: true
-      kubernetes-version:
+      kubernetes_version:
         type: string
         default: v1.24.6
-      kind-version:
+      kind_version:
         type: string
         default: v0.16.0
 
@@ -52,9 +52,9 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           verbosity: 5
-          version: ${{ inputs.kind-version }}
-          kubectl_version: ${{ inputs.kubernetes-version }}
-          node_image: kindest/node:${{ inputs.kubernetes-version }}
+          version: ${{ inputs.kind_version }}
+          kubectl_version: ${{ inputs.kubernetes_version }}
+          node_image: kindest/node:${{ inputs.kubernetes_version }}
 
       - name: Verify Cluster
         run: |

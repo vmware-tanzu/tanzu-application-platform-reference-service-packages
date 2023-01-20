@@ -1,0 +1,43 @@
+#@ load("@ytt:data", "data")
+---
+#@ load("aws-composition.lib.yml",  "rdsInstance", "securityGroup", "securityGroupRule", "subnet", "routeTableAssociation", "routeTable", "route", "subnetGroup")
+#@ load("shared.lib.yml", "labelsForSecret", "tfProviderConfig", "tfWorkspace")
+
+#@ subnetASuffix = '-a'
+#@ subnetAFormat = 'subnet-a-%s'
+#@ availabilityZoneAFormat = '%sa'
+#@ cidrBlockFieldA = 'spec.parameters.aws.public.subnetACidrBlock'
+
+#@ subnetBSuffix = '-b'
+#@ subnetBFormat = 'subnet-b-%s'
+#@ availabilityZoneBFormat = '%sb'
+#@ cidrBlockFieldB = 'spec.parameters.aws.public.subnetBCidrBlock'
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: #@ data.values.providers.aws.name + "-" + data.values.cloudServiceBindingType + "-public"
+  labels:
+    crossplane.io/xrd: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+    provider: #@ data.values.providers.aws.name 
+    database: #@ data.values.cloudServiceBindingType
+    connectivity: "public"
+spec:
+  writeConnectionSecretsToNamespace: #@ data.values.crossplane.namespace
+  compositeTypeRef:
+    apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
+    kind: #@ data.values.xrd.names.kind
+  resources:
+  - #@ labelsForSecret("aws")
+  - #@ tfProviderConfig(data.values.crossplane.namespace)
+  - #@ tfWorkspace(data.values.crossplane.namespace)
+  - #@ rdsInstance(data.values.crossplane.namespace, data.values.providers.aws.configRef, True)
+  - #@ securityGroup()
+  - #@ securityGroupRule()
+  - #@ routeTable()
+  - #@ subnetGroup()
+  - #@ subnet(subnetASuffix, subnetAFormat, availabilityZoneAFormat, cidrBlockFieldA)
+  - #@ routeTableAssociation(subnetASuffix, subnetAFormat)
+  - #@ subnet(subnetBSuffix, subnetBFormat, availabilityZoneBFormat, cidrBlockFieldB)
+  - #@ routeTableAssociation(subnetBSuffix, subnetBFormat)
+  - #@ route('route-%s')
