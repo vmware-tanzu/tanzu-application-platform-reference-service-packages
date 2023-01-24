@@ -1,31 +1,32 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
+trap "top -b -1 -n 1" EXIT
+
 echo ">> Local Test"
 
-export CROSSPLANE_NAMESPACE=${CROSSPLANE_NAMESPACE:-upbound-system}
-AZURE_CREDS_SECRET_NAME=${AZURE_CREDS_SECRET_NAME:-"azure-secret"}
-UXP_VERSION=${UXP_VERSION:-"v1.10.1-up.1"}
-CONFIG_NAME=${CONFIG_NAME:-"trp-azure-mongodb"}
-CONFIG_IMAGE=${CONFIG_IMAGE:-"ghcr.io/vmware-tanzu-labs/tap-reference-packages-azure/crossplane-mongodb"}
-CONFIG_VERSION=${CONFIG_VERSION:-"0.23.1-beta.0"}
-CLAIM_NAME=${CLAIM_NAME:-"trp-cosmosdb-mongo-08"}
-TEST_APP_NAME=${TEST_APP_NAME:-"spring-boot-mongo"}
+SCRIPT_FOLDER=$(basename $0 .sh)
+
+# SCRIPT_COMMON=${SCRIPT_FOLDER}/common.sh
+# [ -x ${SCRIPT_COMMON} ] && source ${SCRIPT_COMMON}
+
+[ -z "${CROSSPLANE_NAMESPACE:-}" ] && ( echo "The CROSSPLANE_NAMESPACE environment variable must be defined" ; exit 1 )
 
 kubectl create namespace ${CROSSPLANE_NAMESPACE} || true
 
 pushd $(dirname $0)
 
-# Requires AZURE_CONFIG to contain an Azure API credential config (JSON format)
-./crossplane-azure-provider-create-secret.sh ${AZURE_CREDS_SECRET_NAME} "${AZURE_CONFIG}"
+# install provider as well as its ProviderConfig only if the INSTALL_PROVIDER environment variable is not empty
+[ -z "${INSTALL_PROVIDER:-}" ] || ./crossplane-install-azure-provider.sh
 
-./crossplane-install-uxp.sh ${UXP_VERSION}
+# install the Crossplane configuration
+./${SCRIPT_FOLDER}/install-package.sh
 
-./crossplane-e2e-mongodb/crossplane-install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION} ${AZURE_CREDS_SECRET_NAME}
+# create the Crossplane claim
+./${SCRIPT_FOLDER}/claim-instance.sh
 
-./crossplane-e2e-mongodb/crossplane-claim-instance.sh ${CLAIM_NAME}
-
-./crossplane-e2e-mongodb/crossplane-test.sh ${TEST_APP_NAME}
-
-./crossplane-e2e-mongodb/crossplane-test.sh ${TEST_APP_NAME}
+# deploy application and test
+./${SCRIPT_FOLDER}/test.sh
 
 popd

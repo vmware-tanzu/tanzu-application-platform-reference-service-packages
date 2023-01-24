@@ -50,7 +50,9 @@ jobs:
       package_version: ${{ needs.bump-version.outputs.version }}
       packages_basedir: ${{ needs.list-packages.outputs.basedir }}
       package_path: ${{ matrix.path }}
-      run-test: ${{ github.event_name == 'pull_request' }}
+      run-test: true
+      # run-test: ${{ github.event_name == 'pull_request' }}
+    secrets: inherit
 
   carvel-publish-package:
     needs:
@@ -80,10 +82,10 @@ jobs:
       package_version: ${{ needs.bump-version.outputs.version }}
       repo_version: ${{ needs.bump-version.outputs.version }}
       prepare_repo_pr: ${{ needs.bump-version.outputs.is_prerelease == 'false' }}
-      release: true
+      release: ${{ needs.bump-version.outputs.is_prerelease == 'true' }}
 
   carvel-test:
-    if: needs.list-packages.outputs.carvel_publish == 'true' && github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/reusable-carvel-test.yml
     needs:
       - list-packages

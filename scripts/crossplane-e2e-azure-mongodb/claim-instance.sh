@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
-CLAIM_NAME=$1
-CROSSPLANE_NAMESPACE=${CROSSPLANE_NAMESPACE:-upbound-system}
+set -euo pipefail
 
+CLAIM_NAME=${1:-${CLAIM_NAME:-}}
+[ -z "${CLAIM_NAME:-}" ] && ( echo "The CLAIM_NAME environment variable must be defined" ; exit 1 )
+[ -z "${CROSSPLANE_NAMESPACE:-}" ] && ( echo "The CROSSPLANE_NAMESPACE environment variable must be defined" ; exit 1 )
+
+echo
+kubectl get xmongodbinstances.azure.ref.services.apps.tanzu.vmware.com,mongodbinstances.azure.ref.services.apps.tanzu.vmware.com
+
+echo
 echo ">> Claiming a MongoDBInstance"
-cat <<EOF | kubectl apply -f -
+kubectl apply -f - <<EOF
 apiVersion: azure.ref.services.apps.tanzu.vmware.com/v1alpha1
 kind: MongoDBInstance
 metadata:
@@ -20,7 +27,7 @@ spec:
       - name: "EnableMongo"
       - name: "mongoEnableDocLevelTTL"
   publishConnectionDetailsTo:
-    name: trp-cosmosdb-mongo-bindable-08
+    name: ${CLAIM_NAME}
     configRef:
       name: default
     metadata:
@@ -28,11 +35,7 @@ spec:
         services.apps.tanzu.vmware.com/class: azure-mongodb
 EOF
 
-kubectl get providerconfig,xmongodbinstance,mongodbinstance
-
-echo ">> Installing Test Application"
-kubectl apply -f https://raw.githubusercontent.com/joostvdg/spring-boot-mongo/main/kubernetes/raw/deployment.yaml 
-kubectl get deployment
+kubectl get xmongodbinstance,mongodbinstance
 
 echo ">> Showing Secrets (1)"
 kubectl get secret -n ${CROSSPLANE_NAMESPACE}

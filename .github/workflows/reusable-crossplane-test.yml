@@ -28,6 +28,9 @@ on:
         type: string
         default: v0.16.0
 
+    secrets:
+      AZURE_CONFIG:
+        required: false
 jobs:
 
   test:
@@ -36,13 +39,25 @@ jobs:
       CROSSPLANE_NAMESPACE: upbound-system
       CONFIG_VERSION: ${{ inputs.package_version }}
       CONFIG_IMAGE: ${{ inputs.package_registry }}/${{ inputs.package_repository }}
+      PACKAGE_NAME: ${{ inputs.package_name }}
 
     steps:
+
+      - name: Get runner info
+        run: |
+          uname -a
+          top -bn1
 
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install UXP
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          only: ytt
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install up CLI
         run: |
           curl -sL "https://cli.upbound.io" | sh
           sudo mv up /usr/local/bin/
@@ -63,11 +78,11 @@ jobs:
           kubectl cluster-info
           kubectl get storageclass standard
 
-      - name: Create Azure Config Secret
-        if: inputs.package_provider == 'azure'
+      - name: Install Universal Crossplane
         run: |
-          kubectl create namespace ${CROSSPLANE_NAMESPACE}
-          kubectl create secret generic azure-secret -n ${CROSSPLANE_NAMESPACE} --from-literal=creds='${{ secrets.AZURE_CONFIG }}'
+          ./scripts/crossplane-install-uxp.sh ${UXP_VERSION}
+        env:
+          UXP_VERSION: v1.10.1-up.1
 
       - name: Test Crossplane package
         run: |

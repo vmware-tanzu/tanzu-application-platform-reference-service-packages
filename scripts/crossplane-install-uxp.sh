@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-UXP_VERSION=${1}
 CROSSPLANE_NAMESPACE=${CROSSPLANE_NAMESPACE:-upbound-system}
 
 echo ">> Installing UXP - Universal Crossplane"
