@@ -1,0 +1,34 @@
+#@data/values-schema
+---
+
+xrd:
+  group: azure.ref.services.apps.tanzu.vmware.com
+  names:
+    kind: XMongoDBInstance
+    plural: xmongodbinstances
+  claimNames:
+    kind: MongoDBInstance
+    plural: mongodbinstances
+  version: v1alpha1
+
+configurationName: "azure-mongodb"
+cloudServiceBindingType: "mongodb"
+
+provider:
+  name: azure
+  image: xpkg.upbound.io/upbound/provider-azure
+  version: ">=v0.18.1"
+  configRef: default
+
+crossplane:
+  #@schema/title "CrossplaneNamespace"
+  #@schema/desc "The namespace where crossplane controller is installed"
+  namespace: upbound-system
+  version: '^v1.10'
+
+#@schema/title "StoreConfig"
+#@schema/desc "Details of the StoreConfig"
+storeConfig:
+  #@schema/title "StoreConfig Name"
+  #@schema/desc "The name of the StoreConfig"
+  name: "default"

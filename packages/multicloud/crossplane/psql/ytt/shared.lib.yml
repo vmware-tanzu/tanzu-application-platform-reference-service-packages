@@ -29,6 +29,7 @@ patches:
   toFieldPath: spec.forProvider.manifest.metadata.labels[services.apps.tanzu.vmware.com/location]
 #@ end
 
+---
 #@ def tfProviderConfig(crossplaneNamespace):
 name: tf-providerconfig
 base:
@@ -64,7 +65,7 @@ patches:
   toFieldPath: spec.forProvider.manifest.metadata.name
 #@ end
 
-
+---
 #@ def tfWorkspace(crossplaneNamespace):
 name: password
 base:
