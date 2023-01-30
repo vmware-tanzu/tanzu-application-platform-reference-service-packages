@@ -4,6 +4,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  packages: write
+  contents: write
+
 on:
   push:
     branches:
@@ -21,22 +25,7 @@ on:
 
 jobs:
 
-  parameters:
-    runs-on: ubuntu-latest
-
-    outputs:
-      packages_basedir: ${{ steps.params.outputs.packages_basedir}}
-
-    steps:
-
-      - name: Set parameters
-        id: params
-        run: |
-          echo "packages_basedir=${PACKAGES_BASEDIR}" >> $GITHUB_OUTPUT
-
   list-packages:
-    needs:
-      - parameters
     uses: ./.github/workflows/reusable-list-packages.yml
     with:
       basedir: packages
@@ -49,7 +38,6 @@ jobs:
 
   crossplane-publish:
     needs:
-      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.crossplane_publish == 'true'
@@ -66,7 +54,6 @@ jobs:
 
   carvel-publish-package:
     needs:
-      - parameters
       - bump-version
       - list-packages
     if: needs.list-packages.outputs.carvel_publish == 'true'
