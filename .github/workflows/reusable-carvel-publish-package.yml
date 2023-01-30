@@ -1,8 +1,5 @@
 name: Reusable workflow for publishing Carvel packages
 
-permissions:
-  packages: write
-
 on:
 
   workflow_call:
