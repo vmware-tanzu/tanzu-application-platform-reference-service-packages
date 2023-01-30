@@ -75,7 +75,7 @@ jobs:
 
           sleep 5 && git fetch --all
 
-          echo "CURRENT_BRANCH=$(git branch --show-current)" >> $GITHUB_ENV
+          echo "CURRENT_BRANCH=$(git branch --show-current)" | tee -a $GITHUB_ENV
 
       - name: Create branch
         id: branch
@@ -92,7 +92,7 @@ jobs:
             BRANCHES="${BRANCHES} ${PACKAGE_BRANCH}"
             git rebase origin/${PACKAGE_BRANCH}
           done
-          trap "git push --delete origin ${BRANCHES}" EXIT
+          trap "tree -a repository ; git push --delete origin ${BRANCHES}" EXIT
 
           # prepare a proper commit message
           COMMIT_MESSAGE="$(git log --pretty=format:'%s' ${CURRENT_BRANCH}..HEAD)"
