@@ -35,6 +35,8 @@ spec:
       key: creds
 EOF
 
+sleep 120
+
 kubectl wait --for=condition=Healthy --timeout=5m providers.pkg.crossplane.io ${PROVIDER_NAME}
 kubectl -n upbound-system get deployments.apps
 

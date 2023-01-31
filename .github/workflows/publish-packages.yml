@@ -50,8 +50,7 @@ jobs:
       package_version: ${{ needs.bump-version.outputs.version }}
       packages_basedir: ${{ needs.list-packages.outputs.basedir }}
       package_path: ${{ matrix.path }}
-      run-test: true
-      # run-test: ${{ github.event_name == 'pull_request' }}
+      run-test: ${{ github.event_name == 'pull_request' }}
     secrets: inherit
 
   carvel-publish-package:

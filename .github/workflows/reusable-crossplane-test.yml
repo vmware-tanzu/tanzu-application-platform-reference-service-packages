@@ -23,10 +23,10 @@ on:
         required: true
       kubernetes_version:
         type: string
-        default: v1.24.6
+        default: v1.26.0
       kind_version:
         type: string
-        default: v0.16.0
+        default: v0.17.0
 
     secrets:
       AZURE_CONFIG:
@@ -39,7 +39,7 @@ jobs:
       CROSSPLANE_NAMESPACE: upbound-system
       CONFIG_VERSION: ${{ inputs.package_version }}
       CONFIG_IMAGE: ${{ inputs.package_registry }}/${{ inputs.package_repository }}
-      PACKAGE_NAME: ${{ inputs.package_name }}
+      UNIQUE_NAME: ${{ inputs.package_name }}-github-${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
 
@@ -64,7 +64,7 @@ jobs:
           up --version
 
       - name: Create k8s Kind Cluster
-        uses: helm/kind-action@v1.4.0
+        uses: helm/kind-action@v1.5.0
         with:
           verbosity: 5
           version: ${{ inputs.kind_version }}
@@ -85,14 +85,26 @@ jobs:
           UXP_VERSION: v1.10.1-up.1
 
       - name: Test Crossplane package
+        id: test
         run: |
-          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+          if [ -x ${SCRIPT} ]; then ${SCRIPT}; fi
         env:
-          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_name }}.sh
+          INSTALL_PROVIDER: "true"
 
-      - name: Cleanup Crossplane package
+          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}.sh
+          CLAIM_NAME: ${{ env.UNIQUE_NAME }}
+          TEST_APP_NAME: ${{ env.UNIQUE_NAME }}
+          CONFIG_NAME: ${{ env.UNIQUE_NAME }}
+
+          # Azure-specific variable
+          AZURE_CONFIG: ${{ secrets.AZURE_CONFIG }}
+
+      - name: Cleanup
         if: always()
         run: |
-          [ -x ${SCRIPT} ] && ${SCRIPT} || true
+          if [ -x ${SCRIPT} ]; then ${SCRIPT}; fi
         env:
           SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_name }}/cleanup.sh
+          CLAIM_NAME: ${{ env.UNIQUE_NAME }}
+          TEST_APP_NAME: ${{ env.UNIQUE_NAME }}
+          CONFIG_NAME: ${{ env.UNIQUE_NAME }}
