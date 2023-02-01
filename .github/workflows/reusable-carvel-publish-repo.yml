@@ -60,6 +60,9 @@ jobs:
     outputs:
       pull_request_number: ${{ steps.pr.outputs.PULL_REQUEST_NUMBER }}
 
+    env:
+      CURRENT_BRANCH: 
+
     steps:
       
       - name: Checkout
@@ -75,7 +78,10 @@ jobs:
 
           sleep 5 && git fetch --all
 
-          echo "CURRENT_BRANCH=$(git branch --show-current)" | tee -a $GITHUB_ENV
+          # get the last token splitting by / to get the branch name, as in refs/heads/main
+          echo "CURRENT_BRANCH=$(grep -oE '[^/]+$' <<<$REF)" | tee -a $GITHUB_ENV
+        env:
+          REF: ${{ github.event_name ==' pull_request' && github.head_ref || github.ref }}
 
       - name: Create branch
         id: branch
