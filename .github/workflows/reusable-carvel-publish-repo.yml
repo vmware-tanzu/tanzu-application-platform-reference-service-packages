@@ -83,6 +83,8 @@ jobs:
       - name: Create branch
         id: branch
         run: |
+          set -x
+          
           # create new branch
           git checkout -b ${REPO_BRANCH_NAME}
 
