@@ -85,6 +85,8 @@ jobs:
         run: |
           set -x
           
+          git checkout ${CURRENT_BRANCH}
+
           # create new branch
           git checkout -b ${REPO_BRANCH_NAME}
 
