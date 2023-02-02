@@ -75,11 +75,17 @@ jobs:
 
           sleep 5 && git fetch --all
 
-          echo "CURRENT_BRANCH=$(git branch --show-current)" >> $GITHUB_ENV
+          # get the last token splitting by / to get the branch name, as in refs/heads/main
+          echo "CURRENT_BRANCH=$(grep -oE '[^/]+$' <<<$REF)" | tee -a $GITHUB_ENV
+        env:
+          REF: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
 
       - name: Create branch
         id: branch
         run: |
+          # make sure the head branch is checked out on pull_request events
+          git checkout ${CURRENT_BRANCH}
+
           # create new branch
           git checkout -b ${REPO_BRANCH_NAME}
 
@@ -92,7 +98,7 @@ jobs:
             BRANCHES="${BRANCHES} ${PACKAGE_BRANCH}"
             git rebase origin/${PACKAGE_BRANCH}
           done
-          trap "git push --delete origin ${BRANCHES}" EXIT
+          trap "tree -a repository ; git push --delete origin ${BRANCHES}" EXIT
 
           # prepare a proper commit message
           COMMIT_MESSAGE="$(git log --pretty=format:'%s' ${CURRENT_BRANCH}..HEAD)"
