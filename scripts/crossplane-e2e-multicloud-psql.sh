@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-trap "echo '###ERROR###' ; !! ; top -b -1 -n 1" ERR
+trap "echo '###ERROR###' ; echo !! ; top -b -1 -n 1" ERR
 
 echo ">> Local Test"
 
@@ -68,6 +68,6 @@ sleep 5
 ./${SCRIPT_FOLDER}/claim-azure-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
 ./${SCRIPT_FOLDER}/test.sh
 
-./crossplane-e2e-multicloud-psql/cleanup.sh
+./${SCRIPT_FOLDER}/cleanup.sh
 
 popd

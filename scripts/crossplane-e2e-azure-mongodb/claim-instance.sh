@@ -42,7 +42,7 @@ kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret
 
 echo ">> Waiting for Managed Resources To Get Ready"
-kubectl wait --for=condition=ready mongodbinstances.azure.ref.services.apps.tanzu.vmware.com ${CLAIM_NAME} --timeout=400s
+kubectl wait --for=condition=ready mongodbinstances.azure.ref.services.apps.tanzu.vmware.com ${CLAIM_NAME} --timeout=10m
 
 echo ">> Showing Secrets (2)"
 kubectl get secret -n ${CROSSPLANE_NAMESPACE}

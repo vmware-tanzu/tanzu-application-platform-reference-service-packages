@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-trap "echo '###ERROR###' ; !! ; top -b -1 -n 1" ERR
+trap "echo '###ERROR###' ; echo !! ; top -b -1 -n 1" ERR
 
 echo ">> Local Test"
 

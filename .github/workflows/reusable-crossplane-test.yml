@@ -104,7 +104,7 @@ jobs:
         run: |
           if [ -x ${SCRIPT} ]; then ${SCRIPT}; fi
         env:
-          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_name }}/cleanup.sh
+          SCRIPT: ./scripts/crossplane-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}/cleanup.sh
           CLAIM_NAME: ${{ env.UNIQUE_NAME }}
           TEST_APP_NAME: ${{ env.UNIQUE_NAME }}
           CONFIG_NAME: ${{ env.UNIQUE_NAME }}
