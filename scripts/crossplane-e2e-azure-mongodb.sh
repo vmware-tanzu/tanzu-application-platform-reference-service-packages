@@ -2,14 +2,11 @@
 
 set -euo pipefail
 
-trap "echo '###ERROR###' ; echo !! ; top -b -1 -n 1" ERR
+trap "echo '###ERROR###' ; !! ; top -b -1 -n 1" ERR
 
 echo ">> Local Test"
 
 SCRIPT_FOLDER=$(basename $0 .sh)
-
-# SCRIPT_COMMON=${SCRIPT_FOLDER}/common.sh
-# [ -x ${SCRIPT_COMMON} ] && source ${SCRIPT_COMMON}
 
 [ -z "${CROSSPLANE_NAMESPACE:-}" ] && ( echo "The CROSSPLANE_NAMESPACE environment variable must be defined" ; exit 1 )
 
