@@ -52,7 +52,7 @@ echo "> Installing required providers"
 
 ./${SCRIPT_FOLDER}/install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION}
 ./${SCRIPT_FOLDER}/claim-helm-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
-./${SCRIPT_FOLDER}/test.sh ${TEST_APP_NAME} 
+./${SCRIPT_FOLDER}/test.sh
 
 # ./${SCRIPT_FOLDER}/cleanup.sh
 
@@ -66,7 +66,7 @@ sleep 5
 
 ./${SCRIPT_FOLDER}/install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION}
 ./${SCRIPT_FOLDER}/claim-azure-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
-./${SCRIPT_FOLDER}/test.sh ${TEST_APP_NAME} 
+./${SCRIPT_FOLDER}/test.sh
 
 ./crossplane-e2e-multicloud-psql/cleanup.sh
 
