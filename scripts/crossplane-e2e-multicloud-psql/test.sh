@@ -11,11 +11,14 @@ MANIFEST="https://raw.githubusercontent.com/joostvdg/spring-boot-postgres/main/k
 curl -sSfL ${MANIFEST} | ytt -f - -f app-overlay.ytt.yml -v name=${TEST_APP_NAME} -v secret=${CLAIM_NAME} | kubectl apply -n default -f -
 kubectl get deployment
 
+trap 'kubectl get pods -o yaml' ERR
+
 echo ">> Waiting on Test Application: ${TEST_APP_NAME}"
 kubectl get pod 
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=${TEST_APP_NAME} --timeout=300s
 
-kubectl describe pod -l app.kubernetes.io/name=${TEST_APP_NAME} 
+kubectl describe pod -l app.kubernetes.io/name=${TEST_APP_NAME}
+
 sleep 10
 
 echo ">> Starting Port Forward"

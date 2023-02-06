@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-trap "echo '###ERROR###' ; echo !! ; top -b -1 -n 1" ERR
+trap "echo '###ERROR###' ; top -b -1 -n 1" ERR
 
 echo ">> Local Test"
 
@@ -25,7 +25,7 @@ pushd $(dirname $0)
 # CONFIG_VERSION=${CONFIG_VERSION:-"0.0.1-rc-1"}
 # CLAIM_NAME=${CLAIM_NAME:-"postgresql-0001"}
 # TEST_APP_NAME=${TEST_APP_NAME:-"spring-boot-postgres"}
-STORAGE_CLASS=${STORAGE_CLASS:-"default"}
+export STORAGE_CLASS=${STORAGE_CLASS:-"standard"}
 
 
 # kubectl create namespace ${CROSSPLANE_NAMESPACE} || true
@@ -51,23 +51,23 @@ echo "> Installing required providers"
 )
 
 ./${SCRIPT_FOLDER}/install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION}
-./${SCRIPT_FOLDER}/claim-helm-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
+./${SCRIPT_FOLDER}/claim-helm-instance.sh
 ./${SCRIPT_FOLDER}/test.sh
 
 # ./${SCRIPT_FOLDER}/cleanup.sh
 
-sleep 5
+# sleep 5
 
-[ -z "${INSTALL_PROVIDER:-}" ] || (
-    ./crossplane-install-azure-provider.sh
-    ./crossplane-install-k8s-provider.sh
-    ./crossplane-install-tf-provider.sh
-)
+# [ -z "${INSTALL_PROVIDER:-}" ] || (
+#     ./crossplane-install-azure-provider.sh
+#     ./crossplane-install-k8s-provider.sh
+#     ./crossplane-install-tf-provider.sh
+# )
 
-./${SCRIPT_FOLDER}/install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION}
-./${SCRIPT_FOLDER}/claim-azure-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
-./${SCRIPT_FOLDER}/test.sh
+# ./${SCRIPT_FOLDER}/install-package.sh ${CONFIG_NAME} ${CONFIG_IMAGE} ${CONFIG_VERSION}
+# ./${SCRIPT_FOLDER}/claim-azure-instance.sh ${CLAIM_NAME} ${STORAGE_CLASS}
+# ./${SCRIPT_FOLDER}/test.sh
 
-./${SCRIPT_FOLDER}/cleanup.sh
+# ./${SCRIPT_FOLDER}/cleanup.sh
 
 popd

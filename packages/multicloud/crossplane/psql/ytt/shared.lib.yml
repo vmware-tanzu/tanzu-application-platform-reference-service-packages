@@ -14,6 +14,7 @@ base:
           labels:
             services.apps.tanzu.vmware.com/class: multicloud-psql
             services.apps.tanzu.vmware.com/infra: #@ infra
+        type: connection.crossplane.io/v1alpha1
 patches:
 - type: FromCompositeFieldPath
   fromFieldPath: metadata.labels[crossplane.io/claim-name]

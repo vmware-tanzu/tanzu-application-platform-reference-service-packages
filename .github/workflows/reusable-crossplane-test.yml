@@ -39,7 +39,8 @@ jobs:
       CROSSPLANE_NAMESPACE: upbound-system
       CONFIG_VERSION: ${{ inputs.package_version }}
       CONFIG_IMAGE: ${{ inputs.package_registry }}/${{ inputs.package_repository }}
-      UNIQUE_NAME: ${{ inputs.package_name }}-github-${{ github.run_id }}-${{ github.run_attempt }}
+      UNIQUE_NAME: gh-${{ github.run_id }}-${{ github.run_attempt }}
+      STORAGE_CLASS: standard # default storage class for kind
 
     steps:
 

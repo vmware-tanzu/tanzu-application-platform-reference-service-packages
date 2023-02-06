@@ -18,5 +18,5 @@ spec:
     source: InjectedIdentity
 EOF
 
-SA=$(kubectl -n ${CROSSPLANE_NAMESPACE} get sa -o name | grep provider-helm | sed -e 's|serviceaccount\/|'${CROSSPLANE_NAMESPACE}':|g')
+SA=$(kubectl -n ${CROSSPLANE_NAMESPACE} get sa -o name | grep provider-kubernetes | sed -e 's|serviceaccount\/|'${CROSSPLANE_NAMESPACE}':|g')
 kubectl create clusterrolebinding provider-kubernetes-admin-binding --clusterrole cluster-admin --serviceaccount="${SA}" || true

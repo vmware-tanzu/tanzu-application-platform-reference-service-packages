@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 CONFIG_NAME=${1:-${CONFIG_NAME:-}}
 CONFIG_IMAGE=${2:-${CONFIG_IMAGE:-}}
 CONFIG_VERSION=${3:-${CONFIG_VERSION:-}}
@@ -16,7 +18,7 @@ metadata:
 spec:
   ignoreCrossplaneConstraints: true
   package: ${CONFIG_IMAGE}:${CONFIG_VERSION}
-  packagePullPolicy: Allways
+  packagePullPolicy: Always
   revisionActivationPolicy: Automatic
   revisionHistoryLimit: 3
   skipDependencyResolution: true
