@@ -1,0 +1,121 @@
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: elasticache.aws.ref.services.apps.tanzu.vmware.com.0.0.5-beta.0
+spec:
+  refName: elasticache.aws.ref.services.apps.tanzu.vmware.com
+  releasedAt: "2023-02-08T14:10:35Z"
+  template:
+    spec:
+      deploy:
+      - kapp: {}
+      fetch:
+      - imgpkgBundle:
+          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/aws/carvel/elasticache@sha256:e0e759a743d2a730d9c54be5603f1efc374ac734fd528c0d2a2e5e64d6b94df0
+      template:
+      - ytt:
+          paths:
+          - config
+      - kbld:
+          paths:
+          - '-'
+          - .imgpkg/images.yml
+  valuesSchema:
+    openAPIv3:
+      additionalProperties: false
+      properties:
+        cacheNodeType:
+          default: cache.t2.micro
+          description: Type of nodes used for the replication group.
+          title: CacheNodeType
+          type: string
+        cacheSubnetGroupName:
+          default: ""
+          description: Name of the cache subnet group to create the replication group
+            in. It must be pre-created if the createCacheSubnetGroup parameter is
+            set to false.
+          title: CacheSubnetGroupName
+          type: string
+        createCacheSubnetGroup:
+          default: false
+          description: Whether to create the CacheSubnetGroup or not.
+          title: CreateCacheSubnetGroup
+          type: boolean
+        createNamespace:
+          default: false
+          description: Whether to create the namespace for the resources or not.
+          title: CreateNamespace
+          type: boolean
+        engineVersion:
+          default: "6.2"
+          description: The version of the Redis engine to use. Available versions
+            can be obtained running `aws cdescribe-cache-engine-versions --engine
+            redis`.
+          title: EngineVersion
+          type: string
+        instanceClassName:
+          default: aws-elasticache
+          description: The name of the instance class we want to use for binding secrets.
+          title: InstanceClassName
+          type: string
+        name:
+          default: ""
+          description: Name of the Elasticache instance.
+          title: Name
+          type: string
+        namespace:
+          default: ""
+          description: Namespace to deploy the kubernetes resources to.
+          title: Namespace
+          type: string
+        replicasPerNodeGroup:
+          default: 0
+          description: Number of replicas per node group. Allowed values are from
+            0 to 5.
+          title: ReplicasPerNodeGroup
+          type: integer
+        serviceInstanceLabels:
+          default: {}
+          description: A set of labels which will be applied to the claimable secret.
+          nullable: true
+          title: Service Instance Labels
+        subnetIDs:
+          default: []
+          description: The list of subnets to create the CacheSubnetGroup for. Mandatory
+            if the createCacheSubnetGroup parameter is set to true.
+          items:
+            default: ""
+            type: string
+          title: SubnetIDs
+          type: array
+        tags:
+          default: []
+          description: Tags to attach to all the resources.
+          items:
+            additionalProperties: false
+            properties:
+              key:
+                default: ""
+                description: The name of the tag.
+                title: Key
+                type: string
+              value:
+                default: ""
+                description: The value of the tag.
+                title: Value
+                type: string
+            type: object
+          title: Tags
+          type: array
+        vpcSecurityGroupIDs:
+          default: []
+          description: The list of security groups to associate to the replication
+            group.
+          items:
+            default: ""
+            type: string
+          title: VpcSecurityGroupIDs
+          type: array
+      type: object
+  version: 0.0.5-beta.0

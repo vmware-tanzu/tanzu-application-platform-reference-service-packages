@@ -1,0 +1,245 @@
+apiVersion: data.packaging.carvel.dev/v1alpha1
+kind: Package
+metadata:
+  creationTimestamp: null
+  name: psql.azure.ref.services.apps.tanzu.vmware.com.0.0.5-beta.0
+spec:
+  refName: psql.azure.ref.services.apps.tanzu.vmware.com
+  releasedAt: "2023-02-08T14:10:31Z"
+  template:
+    spec:
+      deploy:
+      - kapp: {}
+      fetch:
+      - imgpkgBundle:
+          image: ghcr.io/vmware-tanzu/tanzu-application-platform-reference-service-packages/azure/carvel/psql@sha256:47849bcd073c75563b27bedb9eea23c961e060ab818daebcb09235b828d7e30a
+      template:
+      - ytt:
+          paths:
+          - config
+      - kbld:
+          paths:
+          - '-'
+          - .imgpkg/images.yml
+  valuesSchema:
+    openAPIv3:
+      additionalProperties: false
+      properties:
+        aso_controller_namespace:
+          default: azureserviceoperator-system
+          description: The Namespace where the Azure ASO controller is installed that
+            should own this Azure RM resource
+          title: ASO Controller Namespace
+          type: string
+        create_namespace:
+          default: false
+          description: Whether to create the namespace for the resources or not
+          title: Create namespace flag
+          type: boolean
+        database:
+          additionalProperties: false
+          description: The database that will be created.
+          properties:
+            name:
+              default: ""
+              description: Name of the database
+              title: Name
+              type: string
+            tags:
+              default: []
+              description: Tags to attach to the object
+              items:
+                additionalProperties: false
+                properties:
+                  key:
+                    default: ""
+                    description: The name of the tag
+                    title: Key
+                    type: string
+                  value:
+                    default: ""
+                    description: The value of the tag
+                    title: Value
+                    type: string
+                type: object
+              title: Tags
+              type: array
+          title: Database
+          type: object
+        firewall_rules:
+          default: []
+          description: List of firewall rules for exposing the Flexible Server. '0.0.0.0'
+            for both startIpAddress and endIpAddress means it will be available from
+            Azure (not the whole public Internet). Must be IPv4 format.
+          items:
+            additionalProperties: false
+            properties:
+              endIpAddress:
+                default: ""
+                description: The ending IP address of the range
+                title: EndIpAddress
+                type: string
+              startIpAddress:
+                default: ""
+                description: The starting IP address of the range
+                title: StartIpAddress
+                type: string
+              tags:
+                default: []
+                description: Tags to attach to the object
+                items:
+                  additionalProperties: false
+                  properties:
+                    key:
+                      default: ""
+                      description: The name of the tag
+                      title: Key
+                      type: string
+                    value:
+                      default: ""
+                      description: The value of the tag
+                      title: Value
+                      type: string
+                  type: object
+                title: Tags
+                type: array
+            type: object
+          title: FirewallRules
+          type: array
+        global_tags:
+          default: []
+          description: Tags to attach to all the resources
+          items:
+            additionalProperties: false
+            properties:
+              key:
+                default: ""
+                description: The name of the tag
+                title: Key
+                type: string
+              value:
+                default: ""
+                description: The value of the tag
+                title: Value
+                type: string
+            type: object
+          title: GlobalTags
+          type: array
+        location:
+          default: ""
+          description: Location where the resources will be created
+          title: Location
+          type: string
+        name:
+          default: aso-psql
+          description: Name for the resources
+          title: ResourceName
+          type: string
+        namespace:
+          default: ""
+          description: Kubernetes namespace where the Azure resources will be created
+          title: ResourceNamespace
+          type: string
+        resource_group:
+          additionalProperties: false
+          description: Azure ResourceGroup for the servers/database resources
+          properties:
+            name:
+              default: aso-psql
+              description: Azure ResourceGroup name
+              title: Name
+              type: string
+            tags:
+              default: []
+              description: Tags to attach to the object
+              items:
+                additionalProperties: false
+                properties:
+                  key:
+                    default: ""
+                    description: The name of the tag
+                    title: Key
+                    type: string
+                  value:
+                    default: ""
+                    description: The value of the tag
+                    title: Value
+                    type: string
+                type: object
+              title: Tags
+              type: array
+            use_existing:
+              default: false
+              description: Whether to use the existing Azure resource group or not
+              title: UseExisting
+              type: boolean
+          title: ResourceGroup
+          type: object
+        server:
+          additionalProperties: false
+          description: FlexibleServer instance that will be created
+          properties:
+            administrator_name:
+              default: myadmin
+              description: Username for the administrator user. It cannot be 'azure_superuser',
+                'azuresu', 'azure_pg_admin', 'sa', 'admin', 'administrator', 'root',
+                'guest', 'dbmanager', 'loginmanager', 'dbo', 'information_schema',
+                'sys', 'db_accessadmin', 'db_backupoperator', 'db_datareader', 'db_datawriter',
+                'db_ddladmin', 'db_denydatareader', 'db_denydatawriter', 'db_owner',
+                'db_securityadmin', 'public'.
+              title: AdministratorName
+              type: string
+            instance_storage_size_gb:
+              default: 128
+              description: 'The storage size for the instance in GB (allowed: from
+                32 to 16384)'
+              title: InstanceStorageSizeGB
+              type: integer
+            instance_tier:
+              default: GeneralPurpose
+              description: 'The tier of the requested instance (allowed: ''Burstable'',
+                ''GeneralPurpose'' or ''Memory Optimized'')'
+              title: InstanceTier
+              type: string
+            instance_type:
+              default: Standard_D2s_v3
+              description: The type of the requested instance (follows the convention
+                Standard_{VM name})
+              title: InstanceType
+              type: string
+            name:
+              default: ""
+              description: Flexible Server name. It must be unique across all Azure
+                postgres database instances. Only lowercase letters, digits and hyphens
+                are allowed.
+              title: Name
+              type: string
+            tags:
+              default: []
+              description: Tags to attach to the object
+              items:
+                additionalProperties: false
+                properties:
+                  key:
+                    default: ""
+                    description: The name of the tag
+                    title: Key
+                    type: string
+                  value:
+                    default: ""
+                    description: The value of the tag
+                    title: Value
+                    type: string
+                type: object
+              title: Tags
+              type: array
+            version:
+              default: "13"
+              description: PostgreSQL version to deploy (only 11, 12 and 13 are currently
+                supported
+              title: Version
+              type: string
+          title: FlexibleServer
+          type: object
+      type: object
+  version: 0.0.5-beta.0
