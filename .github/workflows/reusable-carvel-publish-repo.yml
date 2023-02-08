@@ -114,15 +114,18 @@ jobs:
 
       - name: Create pull request
         id: pr
-        if: inputs.prepare_repo_pr
         run: |
-          COMMIT_MESSAGE="$(git log --pretty=format:'%s' HEAD~..HEAD)"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "PULL_REQUEST_NUMBER=${{ github.event.number }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ inputs.prepare_repo_pr }}" =~ ^[tT][rR][uU][eE]$ ]]; then
+            COMMIT_MESSAGE="$(git log --pretty=format:'%s' HEAD~..HEAD)"
 
-          # create the pull request against CURRENT_BRANCH
-          gh pr create --base ${CURRENT_BRANCH} --title "Carvel repository release at commit ${{ github.sha }}" --body "${COMMIT_MESSAGE}"
+            # create the pull request against CURRENT_BRANCH
+            gh pr create --base ${CURRENT_BRANCH} --title "Carvel repository release at commit ${{ github.sha }}" --body "${COMMIT_MESSAGE}"
 
-          # get pull request number
-          echo "PULL_REQUEST_NUMBER=$(gh pr view --json number -q '.number' ${REPO_BRANCH_NAME})" >> $GITHUB_OUTPUT
+            # get pull request number
+            echo "PULL_REQUEST_NUMBER=$(gh pr view --json number -q '.number' ${REPO_BRANCH_NAME})" >> $GITHUB_OUTPUT
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
 
