@@ -1,0 +1,100 @@
+name: Reusable workflow for listing changed packages
+
+on:
+
+  workflow_call:
+
+    inputs:
+      basedir:
+        type: string
+        description: Packages base directory path
+        default: packages
+      ref:
+        type: string
+        description: Git reference to compare HEAD with
+        default: HEAD~1
+
+    outputs:
+      basedir:
+        value: ${{ inputs.basedir }}
+      all:
+        value: ${{ jobs.list-packages.outputs.all }}
+      crossplane:
+        value: ${{ jobs.list-packages.outputs.crossplane }}
+      carvel:
+        value: ${{ jobs.list-packages.outputs.carvel }}
+      crossplane_publish:
+        value: ${{ jobs.list-packages.outputs.crossplane_publish }}
+      carvel_publish:
+        value: ${{ jobs.list-packages.outputs.carvel_publish }}
+
+jobs:
+
+  list-packages:
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      all: ${{ steps.list.outputs.packages }}
+      crossplane: ${{ steps.filter.outputs.crossplane }}
+      carvel: ${{ steps.filter.outputs.carvel }}
+      crossplane_publish: ${{ steps.filter.outputs.crossplane_publish }}
+      carvel_publish: ${{ steps.filter.outputs.carvel_publish }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+
+      # Prepare a list of changed files between $GIT_REF (default: HEAD~1) and HEAD
+      # that match a specific pattern: BASEDIR/PROVIDER/PACKAGING/NAME/*
+      # BASEDIR is set to 'packages' by default
+      # PROVIDER can be the Cloud name ("aws", "azure", "gcp"), "multicloud" in case the package spans multiple clouds/platforms or free-form string (for example, "helm")
+      # PACKAGING can currently support either "crossplane" or "carvel"
+      # NAME is the package's name
+
+      # The `git diff-tree` command outputs a list of file paths starting from the root of the repo, one per line,
+      # that have been either Added, Copied, Modified or Renamed (ACMR).
+      # This list is fed to `jq` that transforms it into an actual json array, filters by the entries that start with "BASEDIR/"
+      # and strip the prefix.
+      # Each entry is then tokenised by /, morphed into an object with "provider" key set as the first token, "packaging" as the second one, "name" as the third one
+      # and the "path" as them all back together.
+      # The resulting array is then purged of the duplicates and then set as value for the "include" key in a new object,
+      # in order to meet https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs#expanding-or-adding-matrix-configurations.
+      # The result is appended to GITHUB_OUTPUT as well as written to the workflow's output for debugging purposes (thus the `tee -a`).
+      - name: List packages that have changed
+        id: list
+        run: |
+          packages=$(git diff-tree --name-only -r --diff-filter=ACMR ${GIT_REF} HEAD | jq -ncrR --arg BASEDIR ${BASEDIR%%/} '
+            [inputs]
+            | map(capture("^"+$BASEDIR+"/(?<p>.*)$").p
+              | split("/")
+              | { "path": .[0:3]|join("/"), "provider": .[0], "packaging": .[1], "name": .[2] }
+            )
+            | map(select(.provider!=null and .packaging!=null and .name!=null))
+            | unique
+            | { "include": . }
+          ')
+          echo "packages=${packages}" | tee -a $GITHUB_OUTPUT
+        env:
+          BASEDIR: ${{ inputs.basedir }}
+          GIT_REF: ${{ inputs.ref }}
+
+      # Filter packages by packaging system, in order to feed them to different workflows for publishing and testing.
+      # The $PACKAGES variable is filled with the result from the previous step and filtered using `jq` based on the "packaging" key.
+      # Currently, only "crossplane" and "carvel" are supported and therefore only those outputs are provided, and contain
+      # the list of packages per packaging system that have changed (as value of the "include" key as before).
+      # Boolean outputs are also provided ("crossplane_publish" or "carvel_publish") to tell whether the above list has at least 1 item or not.
+      - name: Filter packages
+        id: filter
+        run: |
+          crossplane=$(jq -c '.include|=map(select(.packaging=="crossplane"))' <<< $PACKAGES)
+          echo "crossplane=${crossplane}" | tee -a $GITHUB_OUTPUT
+          echo "crossplane_publish=$(jq '.include|length > 0' <<<${crossplane})" | tee -a $GITHUB_OUTPUT
+
+          carvel=$(jq -c '.include|=map(select(.packaging=="carvel"))' <<< $PACKAGES)
+          echo "carvel=${carvel}" | tee -a $GITHUB_OUTPUT
+          echo "carvel_publish=$(jq '.include|length > 0' <<<${carvel})" | tee -a $GITHUB_OUTPUT
+        env:
+          PACKAGES: ${{ steps.list.outputs.packages }}

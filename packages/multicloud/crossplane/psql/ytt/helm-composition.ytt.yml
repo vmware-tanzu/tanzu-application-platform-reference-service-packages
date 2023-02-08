@@ -1,0 +1,118 @@
+#@ load("@ytt:data", "data")
+---
+
+#@ load("shared.lib.yml", "labelsForSecret", "tfProviderConfig", "tfWorkspace")
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: #@ data.values.providers.helm.name + "-" + data.values.cloudServiceBindingType
+  labels:
+    crossplane.io/xrd: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+    provider: #@ data.values.providers.helm.name
+    database: #@ data.values.cloudServiceBindingType
+spec:
+  writeConnectionSecretsToNamespace: #@ data.values.crossplane.namespace
+  compositeTypeRef:
+    apiVersion: #@ data.values.xrd.group + "/" + data.values.xrd.version
+    kind: #@ data.values.xrd.names.kind
+  resources:
+  - #@ labelsForSecret("kubernetes")
+  - #@ tfProviderConfig(data.values.crossplane.namespace)
+  - #@ tfWorkspace(data.values.crossplane.namespace)
+  - name: release
+    base:
+      apiVersion: helm.crossplane.io/v1beta1
+      kind: Release
+      spec:
+        forProvider:
+          namespace: #@ data.values.crossplane.namespace
+          chart:
+            name: postgresql
+            repository: https://charts.bitnami.com/bitnami
+            version: 12.1.2
+          values:
+            architecture: standalone
+            global:
+              postgresql:
+                auth:
+                  secretKeys:
+                    adminPasswordKey: password
+
+    connectionDetails:
+    - name: type
+      value: postgresql
+    - name: provider
+      value: #@ data.values.providers.helm.name
+    - name: database
+      fromFieldPath: spec.forProvider.values.global.postgresql.auth.database
+      type: FromFieldPath
+    - name: username
+      fromFieldPath: spec.forProvider.values.global.postgresql.auth.username
+      type: FromFieldPath
+    - name: host
+      fromFieldPath: metadata.annotations.address
+      type: FromFieldPath
+    - name: port
+      value: "5432"
+  
+    patches:
+    - type: CombineFromComposite
+      toFieldPath: spec.forProvider.values.primary.initdb.args
+      policy:
+        fromFieldPath: Required
+      combine:
+        strategy: string
+        string:
+          fmt: '-E %s --locale=%s'
+        variables:
+        - fromFieldPath: spec.parameters.charset
+        - fromFieldPath: spec.parameters.collation
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.version
+      toFieldPath: spec.forProvider.values.image.tag
+      transforms:
+      - type: map
+        map:
+          "11": "11.18.0"
+          "12": "12.13.0"
+          "13": "13.9.0"
+          "14": "14.6.0"
+          "15": "15.1.0"
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.uid
+      toFieldPath: spec.forProvider.values.global.postgresql.auth.existingSecret
+      transforms:
+        - type: string
+          string:
+            type: Format
+            fmt: '%s-postgresql-admin'
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.adminUsername
+      toFieldPath: spec.forProvider.values.global.postgresql.auth.username
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.storageClass
+      toFieldPath: spec.forProvider.values.primary.persistence.storageClass
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.database
+      toFieldPath: spec.forProvider.values.global.postgresql.auth.database
+    - type: FromCompositeFieldPath
+      fromFieldPath: status.address
+      toFieldPath: metadata.annotations.address
+    - type: ToCompositeFieldPath
+      toFieldPath: status.location
+      fromFieldPath: spec.forProvider.namespace
+    - type: CombineToComposite
+      toFieldPath: status.address
+      policy:
+        fromFieldPath: Required
+      combine:
+        strategy: string
+        string:
+          fmt: '%s-postgresql.%s.svc.cluster.local'
+        variables:
+        - fromFieldPath: metadata.name
+        - fromFieldPath: spec.forProvider.namespace
+    - type: ToCompositeFieldPath
+      fromFieldPath: spec.forProvider.values.image.tag
+      toFieldPath: status.version

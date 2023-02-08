@@ -1,0 +1,39 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:assert", "assert")
+
+#@ if data.values.registry == "":
+#@   assert.fail('data value "registry" must not be empty')
+#@ end
+#@ if data.values.repository == "":
+#@   assert.fail('data value "repository" must not be empty')
+#@ end
+#@ if data.values.metadata.name == "":
+#@   assert.fail('.metadata.name must not be empty')
+#@ end
+
+---
+apiVersion: kctrl.carvel.dev/v1alpha1
+kind: PackageBuild
+metadata:
+  creationTimestamp: null
+  name: #@ data.values.metadata.name
+spec:
+  release:
+  - resource: {}
+  template:
+    spec:
+      app:
+        spec:
+          deploy:
+          - kapp: {}
+          template:
+          - ytt:
+              paths:
+              - config
+          - kbld: {}
+      export:
+      - imgpkgBundle:
+          image: #@ data.values.registry + "/" + data.values.repository
+          useKbldImagesLock: true
+        includePaths:
+        - config

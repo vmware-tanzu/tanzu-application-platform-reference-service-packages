@@ -1,0 +1,100 @@
+name: Reusable workflow for publishing Crossplane packages
+
+on:
+
+  workflow_call:
+
+    inputs:
+      packages_basedir:
+        type: string
+        description: Packages base directory path
+        default: packages
+      package_path:
+        type: string
+        required: true
+      package_version:
+        type: string
+        required: true
+      package_name:
+        type: string
+        required: true
+      package_provider:
+        type: string
+        required: true
+      run-test:
+        type: boolean
+        default: false
+
+    outputs:
+      package_repository:
+        value: ${{ jobs.publish.outputs.package_repository }}
+      package_registry:
+        value: ${{ jobs.publish.outputs.package_registry }}
+
+    secrets:
+      AZURE_CONFIG:
+        required: false
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+
+    outputs:
+      package_repository: ${{ env.PACKAGE_REPOSITORY }}
+      package_registry: ${{ env.PACKAGE_REGISTRY }}
+
+    env:
+      PACKAGE_VERSION: ${{ inputs.package_version }}
+      PACKAGE_REGISTRY: ghcr.io
+      PACKAGE_REPOSITORY: ${{ github.repository }}/${{ inputs.package_provider }}/crossplane/${{ inputs.package_name }}
+      PACKAGE_PROVIDER: ${{ inputs.package_provider }}
+      PACKAGE_NAME: ${{ inputs.package_name }}
+      PACKAGES_BASEDIR: ${{ inputs.packages_basedir }}
+      PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.package_version }}
+
+      - name: Install up CLI
+        run: |
+          curl -sL "https://cli.upbound.io" | sh
+          sudo mv up /usr/local/bin/
+          up --version
+
+      - name: Install Carvel tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          only: ytt
+
+      - name: Log in to ${{ env.PACKAGE_REGISTRY }}
+        uses: docker/login-action@v2.1.0
+        with:
+          registry: ${{ env.PACKAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dump info
+        run: |
+          env | sort
+
+      - name: Crossplane Package Publish
+        run: |
+          make crossplane-push
+
+  test:
+    if: inputs.run-test
+    uses: ./.github/workflows/reusable-crossplane-test.yml
+    needs:
+      - publish
+    with:
+      package_version: ${{ inputs.package_version }}
+      package_name: ${{ inputs.package_name }}
+      package_provider: ${{ inputs.package_provider }}
+      package_registry: ${{ needs.publish.outputs.package_registry }}
+      package_repository: ${{ needs.publish.outputs.package_repository }}
+    secrets: inherit

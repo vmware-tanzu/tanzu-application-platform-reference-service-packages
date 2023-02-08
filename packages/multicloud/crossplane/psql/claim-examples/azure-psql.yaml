@@ -1,0 +1,19 @@
+apiVersion: multi.ref.services.apps.tanzu.vmware.com/v1alpha1
+kind: PostgreSQLInstance
+metadata:
+  name: my-azure-psql
+  labels:
+    services.apps.tanzu.vmware.com/claimable: "true"
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: azure
+  parameters:
+    location: "West Europe"
+    version: "12"
+    database: demo
+    collation: en_GB.utf8
+    storageClass: hostpath
+    firewallRule:
+      startIpAddress: "0.0.0.0"
+      endIpAddress: "255.255.255.255"

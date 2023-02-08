@@ -1,0 +1,28 @@
+#@ load("@ytt:overlay", "overlay")
+#@ load("@ytt:data", "data")
+
+#@ name = data.values.name
+
+#@overlay/match by=overlay.all, expects="1+"
+---
+metadata:
+  name: #@ name
+  labels:
+    app.kubernetes.io/name: #@ name
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: #@ name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: #@ name
+    spec:
+      volumes:
+      #@overlay/match by="name"
+      - name: secret-volume
+        projected:
+          sources:
+          #@overlay/match by=overlay.all, expects="1+"
+          - secret:
+              name: #@ data.values.secret

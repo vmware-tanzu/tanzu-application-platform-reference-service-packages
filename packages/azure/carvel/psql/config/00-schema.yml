@@ -1,0 +1,140 @@
+#@data/values-schema
+
+---
+#@schema/title "ASO Controller Namespace"
+#@schema/desc "The Namespace where the Azure ASO controller is installed that should own this Azure RM resource"
+aso_controller_namespace: "azureserviceoperator-system"
+
+#@schema/title "ResourceName"
+#@schema/desc "Name for the resources"
+name: "aso-psql"
+
+#@schema/title "ResourceNamespace"
+#@schema/desc "Kubernetes namespace where the Azure resources will be created"
+namespace: ""
+
+#@schema/title "Create namespace flag"
+#@schema/desc "Whether to create the namespace for the resources or not"
+create_namespace: False
+
+#@schema/title "ResourceGroup"
+#@schema/desc "Azure ResourceGroup for the servers/database resources"
+resource_group:
+  #@schema/title "Name"
+  #@schema/desc "Azure ResourceGroup name"
+  name: "aso-psql"
+  #@schema/title "UseExisting"
+  #@schema/desc "Whether to use the existing Azure resource group or not"
+  use_existing: False
+  #@schema/title "Tags"
+  #@schema/desc "Tags to attach to the object"
+  #@schema/default []
+  tags:
+    -
+      #@schema/title "Key"
+      #@schema/desc "The name of the tag"
+      key: ""
+      #@schema/title "Value"
+      #@schema/desc "The value of the tag"
+      value: ""
+  
+
+#@schema/title "Location"
+#@schema/desc "Location where the resources will be created"
+location: ""
+
+#@schema/title "FlexibleServer"
+#@schema/desc "FlexibleServer instance that will be created"
+server:
+
+  #@schema/title "Name"
+  #@schema/desc "Flexible Server name. It must be unique across all Azure postgres database instances. Only lowercase letters, digits and hyphens are allowed."
+  name: ""
+
+  #@schema/title "Version"
+  #@schema/desc "PostgreSQL version to deploy (only 11, 12 and 13 are currently supported"
+  version: "13"
+
+  #@schema/title "AdministratorName"
+  #@schema/desc "Username for the administrator user. It cannot be 'azure_superuser', 'azuresu', 'azure_pg_admin', 'sa', 'admin', 'administrator', 'root', 'guest', 'dbmanager', 'loginmanager', 'dbo', 'information_schema', 'sys', 'db_accessadmin', 'db_backupoperator', 'db_datareader', 'db_datawriter', 'db_ddladmin', 'db_denydatareader', 'db_denydatawriter', 'db_owner', 'db_securityadmin', 'public'."
+  administrator_name: "myadmin"
+
+  #@schema/title "InstanceType"
+  #@schema/desc "The type of the requested instance (follows the convention Standard_{VM name})"
+  instance_type: "Standard_D2s_v3"
+
+  #@schema/title "InstanceTier"
+  #@schema/desc "The tier of the requested instance (allowed: 'Burstable', 'GeneralPurpose' or 'Memory Optimized')"
+  instance_tier: "GeneralPurpose"
+
+  #@schema/title "InstanceStorageSizeGB"
+  #@schema/desc "The storage size for the instance in GB (allowed: from 32 to 16384)"
+  instance_storage_size_gb: 128
+
+  #@schema/title "Tags"
+  #@schema/desc "Tags to attach to the object"
+  #@schema/default []
+  tags:
+    -
+      #@schema/title "Key"
+      #@schema/desc "The name of the tag"
+      key: ""
+      #@schema/title "Value"
+      #@schema/desc "The value of the tag"
+      value: ""
+
+#@schema/title "Database"
+#@schema/desc "The database that will be created."
+database:
+
+  #@schema/title "Name"
+  #@schema/desc "Name of the database"
+  name: ""
+
+  #@schema/title "Tags"
+  #@schema/desc "Tags to attach to the object"
+  #@schema/default []
+  tags:
+    -
+      #@schema/title "Key"
+      #@schema/desc "The name of the tag"
+      key: ""
+      #@schema/title "Value"
+      #@schema/desc "The value of the tag"
+      value: ""
+  
+#@schema/title "FirewallRules"
+#@schema/desc "List of firewall rules for exposing the Flexible Server. '0.0.0.0' for both startIpAddress and endIpAddress means it will be available from Azure (not the whole public Internet). Must be IPv4 format."
+#@schema/default []
+firewall_rules:
+
+  -
+    #@schema/title "StartIpAddress"
+    #@schema/desc "The starting IP address of the range"
+    startIpAddress: ""
+    #@schema/title "EndIpAddress"
+    #@schema/desc "The ending IP address of the range"
+    endIpAddress: ""
+    #@schema/title "Tags"
+    #@schema/desc "Tags to attach to the object"
+    #@schema/default []
+    tags:
+      -
+        #@schema/title "Key"
+        #@schema/desc "The name of the tag"
+        key: ""
+        #@schema/title "Value"
+        #@schema/desc "The value of the tag"
+        value: ""
+    
+#@schema/title "GlobalTags"
+#@schema/desc "Tags to attach to all the resources"
+#@schema/default []
+global_tags:
+  -
+    #@schema/title "Key"
+    #@schema/desc "The name of the tag"
+    key: ""
+    #@schema/title "Value"
+    #@schema/desc "The value of the tag"
+    value: ""

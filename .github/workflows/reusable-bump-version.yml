@@ -1,0 +1,58 @@
+name: Reusable bump-version workflow
+
+on:
+
+  workflow_call:
+
+    inputs:
+      default_bump:
+        type: string
+        default: patch
+
+    outputs:
+      version:
+        value: ${{ jobs.bump-version.outputs.version }}
+        description: The new published version
+      is_prerelease:
+        value: ${{ jobs.bump-version.outputs.is_prerelease }}
+        description: Whether the version is a pre-release or not
+
+jobs:
+
+  bump-version:
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.bump.outputs.new_tag }}
+      is_prerelease: ${{ steps.pre.outputs.is_prerelease }}
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Define default branch
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "DEFAULT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
+          fi
+
+      - name: Bump version and push tag
+        id: bump
+        uses: anothrNick/github-tag-action@1.57.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
+          INITIAL_VERSION: 0.1.0
+          RELEASE_BRANCHES: main
+          PRERELEASE: true
+          DEFAULT_BUMP: ${{ inputs.default_bump }}
+
+      - name: Check pre-release
+        id: pre
+        run: |
+          [[ "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && is_prerelease=false || is_prerelease=true
+          echo "is_prerelease=${is_prerelease}" >> $GITHUB_OUTPUT
+        env:
+          TAG: ${{ steps.bump.outputs.new_tag }}
