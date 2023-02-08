@@ -1,0 +1,13 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: #@ data.values.configurationName
+spec:
+  dependsOn:
+    #@ for name in data.values.providers:
+    #@   provider = data.values.providers[name]
+    - provider: #@ provider.image
+      version: #@ provider.version
+    #@ end

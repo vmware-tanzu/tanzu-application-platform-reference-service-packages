@@ -1,0 +1,53 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+#@ namespace = data.values.namespace if "namespace" in data.values else "services"
+#@ serviceAccountName = data.values.serviceAccount
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: #@ serviceAccountName
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: #@ serviceAccountName
+rules:
+- apiGroups: ["dbforpostgresql.azure.com"]
+  resources: ["flexibleservers","flexibleserversdatabases","flexibleserversfirewallrules"]
+  verbs:     ["*"]
+- apiGroups: ["resources.azure.com"]
+  resources: ["resourcegroups"]
+  verbs:     ["*"]  
+- apiGroups: ["secretgen.carvel.dev", "secretgen.k14s.io"]
+  resources: ["secrettemplates","passwords"]
+  verbs:     ["*"]
+- apiGroups: [""]
+  resources: ["serviceaccounts","configmaps"]
+  verbs:     ["*"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs:     ["get", "list"]  
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles","rolebindings"]
+  verbs:     ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: #@ serviceAccountName + "-binding"
+subjects:
+- kind: ServiceAccount
+  name: #@ serviceAccountName
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: #@ serviceAccountName
+
+
+#@overlay/match by=overlay.all, expects="1+"
+---
+metadata:
+  #@overlay/match missing_ok=True
+  namespace: #@ namespace

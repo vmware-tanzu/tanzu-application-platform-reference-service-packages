@@ -1,0 +1,16 @@
+apiVersion: multi.ref.services.apps.tanzu.vmware.com/v1alpha1
+kind: PostgreSQLInstance
+metadata:
+  name: postgresql-049
+  labels:
+    services.apps.tanzu.vmware.com/claimable: "true"
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: helm
+  parameters:
+    location: local
+    version: "12"
+    database: petclinic
+    collation: en_GB.utf8
+    storageClass: gp2

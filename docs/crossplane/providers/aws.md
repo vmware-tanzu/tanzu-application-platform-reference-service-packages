@@ -23,7 +23,7 @@ and store the desired release into the `PROVIDER_AWS_RELEASE` variable.
     === "Upbound CLI"
         Do make sure you have installed the `up` CLI as described [here](../index.md) and execute
         ```sh
-        up controlplane provider install xpkg.upbound.io/upbound/provider-aws:${PROVIDER_AWS_RELEASE} --name provider-aws
+        up controlplane provider install xpkg.upbound.io/upbound/provider-aws:${PROVIDER_AWS_RELEASE} --name upbound-provider-aws
         ```
 
     === "YAML manifest"
@@ -32,7 +32,7 @@ and store the desired release into the `PROVIDER_AWS_RELEASE` variable.
         apiVersion: pkg.crossplane.io/v1
         kind: Provider
         metadata:
-          name: provider-aws
+          name: upbound-provider-aws
         spec:
           package: xpkg.upbound.io/upbound/provider-aws:${PROVIDER_AWS_RELEASE}
         EOF
@@ -87,7 +87,7 @@ cat > ${ROLE_TRUST_POLICY} <<EOF
         "Action": "sts:AssumeRoleWithWebIdentity",
         "Condition": {
             "StringLike": {
-                "${OIDC_ID}:sub": "system:serviceaccount:upbound-system:provider-aws-*"
+                "${OIDC_ID}:sub": "system:serviceaccount:upbound-system:upbound-provider-aws-*"
             }
         }
     }]
@@ -160,13 +160,13 @@ EOF
 and patch the AWS provider to use it:
 
 ```sh
-kubectl patch providers.pkg.crossplane.io provider-aws --type='merge' --patch '{"spec": { "controllerConfigRef": { "name": "aws-irsa" } } }'
+kubectl patch providers.pkg.crossplane.io upbound-provider-aws --type='merge' --patch '{"spec": { "controllerConfigRef": { "name": "aws-irsa" } } }'
 ```
 
 Destroy the existing pods to make sure that new ones will be created:
 
 ```sh
-kubectl -n upbound-system delete pods -l pkg.crossplane.io/provider=provider-aws
+kubectl -n upbound-system delete pods -l pkg.crossplane.io/provider=upbound-provider-aws
 ```
 
 Now you can test the effectiveness of the configuration by creating a simple S3 bucket:

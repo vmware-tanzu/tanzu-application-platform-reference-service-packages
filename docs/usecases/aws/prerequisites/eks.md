@@ -68,8 +68,9 @@ EBS volumes.
 ```sh
 # define variables for IAM
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-OIDC_ID=$(aws eks describe-cluster --name ${CLUSTER_NAME} --output text --query "cluster.identity.oidc.issuer" | cut -d/ -f3-)
-EBS_ROLE=AmazonEKS_EBS_CSI_Driver-${CLUSTER_NAME}
+OIDC_URL=$(aws eks describe-cluster --name ${CLUSTER_NAME} --output text --query "cluster.identity.oidc.issuer")
+OIDC_ID=$(cut -d/ -f3- <<<$OIDC_URL)
+EBS_ROLE="AmazonEKS_EBS_CSI_Driver-${CLUSTER_NAME}"
 ROLE_TRUST_POLICY=$(mktemp)
 ROLE_PERMISSION_POLICY=$(mktemp)
 
