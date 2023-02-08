@@ -141,7 +141,7 @@ jobs:
           if [[ "$PRERELEASE" =~ ^[tT][rR][uU][eE]$ ]]; then
             if [ -x ${SCRIPT} ]; then
               ${SCRIPT}
-            else
+            elif [ ! -z "$PULL_REQUEST_NUMBER" ]; then
               # no pre-release test script provided
               LABEL=untested
               gh label create -c ffaa00 --force $LABEL
