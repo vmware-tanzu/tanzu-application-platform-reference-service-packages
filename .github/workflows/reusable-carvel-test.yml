@@ -152,18 +152,18 @@ jobs:
             ${SCRIPT}
           fi
         env:
-          AZURE_CONFIG: ${{ secrets.AZURE_CONFIG }}
           SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}.sh
           PACKAGE_DIR: ${{ inputs.packages_basedir }}/${{ inputs.package_path }}
           PRERELEASE: ${{ inputs.package_prerelease }}
           PULL_REQUEST_NUMBER: ${{ inputs.pull_request_number }}
           GH_TOKEN: ${{ github.token }}
 
-      - name: Cleanup Carvel package
+          # Azure-specific variable
+          AZURE_CONFIG: ${{ secrets.AZURE_CONFIG }}
+
+      - name: Cleanup
         if: always()
         run: |
-          if [ -x ${SCRIPT} ]; then
-            ${SCRIPT}
-          fi
+          if [ -x ${SCRIPT} ]; then ${SCRIPT}; fi
         env:
           SCRIPT: ./scripts/carvel-e2e-${{ inputs.package_provider }}-${{ inputs.package_name }}/cleanup.sh

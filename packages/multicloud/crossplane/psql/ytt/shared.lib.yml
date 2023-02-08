@@ -14,6 +14,7 @@ base:
           labels:
             services.apps.tanzu.vmware.com/class: multicloud-psql
             services.apps.tanzu.vmware.com/infra: #@ infra
+        type: connection.crossplane.io/v1alpha1
 patches:
 - type: FromCompositeFieldPath
   fromFieldPath: metadata.labels[crossplane.io/claim-name]
@@ -29,6 +30,7 @@ patches:
   toFieldPath: spec.forProvider.manifest.metadata.labels[services.apps.tanzu.vmware.com/location]
 #@ end
 
+---
 #@ def tfProviderConfig(crossplaneNamespace):
 name: tf-providerconfig
 base:
@@ -64,7 +66,7 @@ patches:
   toFieldPath: spec.forProvider.manifest.metadata.name
 #@ end
 
-
+---
 #@ def tfWorkspace(crossplaneNamespace):
 name: password
 base:

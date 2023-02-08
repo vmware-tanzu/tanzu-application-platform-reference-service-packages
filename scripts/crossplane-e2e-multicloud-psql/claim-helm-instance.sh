@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
-CLAIM_NAME=$1
-STORAGE_CLASS=$2
-CROSSPLANE_NAMESPACE=${CROSSPLANE_NAMESPACE:-upbound-system}
+set -euo pipefail
 
-echo ">> Claiming a PSQl Instance"
-cat <<EOF | kubectl apply -f -
+[ -z "${CLAIM_NAME:-}" ] && ( echo "The CLAIM_NAME environment variable must be defined" ; exit 1 )
+[ -z "${STORAGE_CLASS:-}" ] && ( echo "The STORAGE_CLASS environment variable must be defined" ; exit 1 )
+[ -z "${CROSSPLANE_NAMESPACE:-}" ] && ( echo "The CROSSPLANE_NAMESPACE environment variable must be defined" ; exit 1 )
+
+echo ">> Claiming a PSQL Instance"
+kubectl apply -f - <<EOF
 apiVersion: multi.ref.services.apps.tanzu.vmware.com/v1alpha1
 kind: PostgreSQLInstance
 metadata:
@@ -31,8 +33,11 @@ echo ">> Showing Secrets (1)"
 kubectl get secret -n ${CROSSPLANE_NAMESPACE}
 kubectl get secret
 
+kubectl get managed
+trap 'kubectl get managed ; kubectl describe postgresqlinstances.multi.ref.services.apps.tanzu.vmware.com/${CLAIM_NAME} ; kubectl get xpostgresqlinstances -o yaml ; kubectl get secrets ${CLAIM_NAME} -o yaml' ERR
+
 echo ">> Waiting for Managed Resources To Get Ready"
-kubectl wait --for=condition=ready postgresqlinstances.multi.ref.services.apps.tanzu.vmware.com/${CLAIM_NAME} --timeout=400s
+kubectl wait --for=condition=ready postgresqlinstances.multi.ref.services.apps.tanzu.vmware.com/${CLAIM_NAME} --timeout=120s
 # We can also wait on the "release"
 
 echo ">> Showing Secrets (2)"

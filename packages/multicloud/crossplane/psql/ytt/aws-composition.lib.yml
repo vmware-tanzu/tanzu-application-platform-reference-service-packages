@@ -2,7 +2,7 @@
 
 #@ end
 
-
+---
 #@ def rdsInstance(crossplaneNamespace, providerConfigRef, publiclyAccessible):
 name: rdsinstance
 base:
@@ -84,6 +84,7 @@ connectionDetails:
 - name: securitygroup
 #@ end
 
+---
 #@ def securityGroup():
 name: securitygroup
 base:
@@ -109,6 +110,7 @@ patches:
   toFieldPath: spec.forProvider.region
 #@ end
 
+---
 #@ def securityGroupRule():
 name: securitygrouprule
 base:
@@ -131,6 +133,7 @@ patches:
   toFieldPath: spec.forProvider.region
 #@ end
 
+---
 #@ def subnetGroup():
 name: subnetgroup
 base: 
@@ -156,6 +159,7 @@ patches:
   toFieldPath: spec.forProvider.region
 #@ end
 
+---
 #@ def subnet(nameSuffix, nameFormat, availabilityZoneFormat, cidrBlockField):
 name: #@ "subnet" + nameSuffix
 base: 
@@ -197,6 +201,7 @@ patches:
         fmt: #@ availabilityZoneFormat
 #@ end
 
+---
 #@ def routeTable():
 name: routetable
 base: 
@@ -225,6 +230,7 @@ patches:
         fmt: 'rds-%s'
 #@ end
 
+---
 #@ def routeTableAssociation(nameSuffix, subnetNameFormat):
 name: #@ "routeTableAssociation" + nameSuffix
 base: 
@@ -256,6 +262,7 @@ patches:
         fmt: #@ subnetNameFormat
 #@ end
 
+---
 #@ def route(routeFormat):
 name: route
 base: 

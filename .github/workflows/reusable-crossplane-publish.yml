@@ -31,6 +31,10 @@ on:
       package_registry:
         value: ${{ jobs.publish.outputs.package_registry }}
 
+    secrets:
+      AZURE_CONFIG:
+        required: false
+
 jobs:
 
   publish:
@@ -55,7 +59,7 @@ jobs:
         with:
           ref: ${{ inputs.package_version }}
 
-      - name: Install UXP
+      - name: Install up CLI
         run: |
           curl -sL "https://cli.upbound.io" | sh
           sudo mv up /usr/local/bin/
@@ -68,7 +72,7 @@ jobs:
           only: ytt
 
       - name: Log in to ${{ env.PACKAGE_REGISTRY }}
-        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9  # v1.10.0
+        uses: docker/login-action@v2.1.0
         with:
           registry: ${{ env.PACKAGE_REGISTRY }}
           username: ${{ github.actor }}
@@ -93,3 +97,4 @@ jobs:
       package_provider: ${{ inputs.package_provider }}
       package_registry: ${{ needs.publish.outputs.package_registry }}
       package_repository: ${{ needs.publish.outputs.package_repository }}
+    secrets: inherit

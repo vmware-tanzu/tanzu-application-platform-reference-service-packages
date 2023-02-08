@@ -51,7 +51,7 @@ spec:
       fromFieldPath: spec.forProvider.values.global.postgresql.auth.username
       type: FromFieldPath
     - name: host
-      fromFieldPath: metadata.labels.address
+      fromFieldPath: metadata.annotations.address
       type: FromFieldPath
     - name: port
       value: "5432"
@@ -98,7 +98,7 @@ spec:
       toFieldPath: spec.forProvider.values.global.postgresql.auth.database
     - type: FromCompositeFieldPath
       fromFieldPath: status.address
-      toFieldPath: metadata.labels.address
+      toFieldPath: metadata.annotations.address
     - type: ToCompositeFieldPath
       toFieldPath: status.location
       fromFieldPath: spec.forProvider.namespace
@@ -109,7 +109,7 @@ spec:
       combine:
         strategy: string
         string:
-          fmt: '%s.%s.svc.cluster.local'
+          fmt: '%s-postgresql.%s.svc.cluster.local'
         variables:
         - fromFieldPath: metadata.name
         - fromFieldPath: spec.forProvider.namespace

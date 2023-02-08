@@ -1,0 +1,76 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: #@ data.values.xrd.names.plural + "." + data.values.xrd.group
+spec:
+  group: #@ data.values.xrd.group
+  names: #@ data.values.xrd.names
+  claimNames: #@ data.values.xrd.claimNames
+  connectionSecretKeys:
+  - database
+  - uri
+  - type
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  location:
+                    type: string
+                  providerConfig:
+                    type: string
+                    default: default
+                  mongodbVersion:
+                    type: string
+                    default: "3.6"
+                    enum: ["4.2", "4.0", "3.6", "3.2"]
+                  capabilities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                      required:
+                      - name
+                required:
+                - location
+                - capabilities
+            required:
+            - parameters
+          status:
+            type: object
+            properties:
+              mongodbVersion:
+                description: The version of the MongoDB server
+                type: string
+              location:
+                description: The location of the MongoDB server
+                type: string
+              endpoint:
+                description: The endpoint of the MongoDB server
+                type: string
+    additionalPrinterColumns:
+    - name: mongodbVersion
+      type: string
+      jsonPath: ".status.mongodbVersion"
+    - name: location
+      type: string
+      jsonPath: ".status.location"
+    - name: endpoint
+      type: string
+      jsonPath: ".status.endpoint"
+    - name: connection-details
+      type: string
+      jsonPath: ".spec.publishConnectionDetailsTo.name"
