@@ -2,7 +2,7 @@
 
 ## Docker build image
 
-Build a new docker image locally with the sample redis app:
+Build a new docker image locally with the sample mongodb app:
 
 ```shell
 docker buildx build . --platform linux/amd64 --tag <IMAG NAME>:<IMAGE TAG>
@@ -19,7 +19,7 @@ docker push <IMAG NAME>:<IMAGE TAG>
 Github Actions automate the build of the sample_apps-mongo app. All images can be found and pull from:
 
 ```text
-https://github.com/bzhtux/sample_apps/pkgs/container/sample_apps-redis/versions
+https://github.com/bzhtux/sample_apps/pkgs/container/sample_apps-mongodb/versions
 ```
 
 ```shell
@@ -82,7 +82,7 @@ Add bitnami helm repo:
 helm repo add bitnami https://charts.bitnami.com/bitnami
 ```
 
-Then install Redis:
+Then install MongoDB:
 
 ```shell
 helm install mongodb bitnami/mongodb
@@ -193,7 +193,7 @@ spec:
         path: /
 ```
 
-### Define Redis configuration
+### Define MongoDB configuration
 
 Define connection informations and crededentials within the k8s/01.secret.yaml as below:
 
