@@ -1,4 +1,4 @@
-# NOTICE: Since the 1.5.0 release of Tanzu Application Platform (TAP) the default approach to manage CSP services is through [crossplane](https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/1.5/tap/crossplane-about.html). Thus this repo is deprecated and will be archived once TAP 1.4.x reached end of support.
+# NOTICE: Since the 1.5.0 release of Tanzu Application Platform (TAP) the default approach to manage CSP services is through [Crossplane](https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/1.5/tap/crossplane-about.html). Thus, this repo is deprecated and will be archived once TAP 1.4.x reaches end of support.
 
 
 # Tanzu Application Platform Service Reference Packages
