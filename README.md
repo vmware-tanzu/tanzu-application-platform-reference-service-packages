@@ -1,3 +1,6 @@
+# NOTICE: Since the 1.5.0 release of Tanzu Application Platform (TAP) the default approach to manage CSP services is through [Crossplane](https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/1.5/tap/crossplane-about.html). Thus, this repo is deprecated and will be archived once TAP 1.4.x reaches end of support.
+
+
 # Tanzu Application Platform Service Reference Packages
 
 [![MongoDB E2E Crossplane](https://github.com/matteo-magni/tanzu-application-platform-reference-service-packages/actions/workflows/azure-crossplane-mongodb-e2e.yml/badge.svg?branch=develop)](https://github.com/matteo-magni/tanzu-application-platform-reference-service-packages/actions/workflows/azure-crossplane-mongodb-e2e.yml)
